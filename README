@@ -1,1 +1,19 @@
-NOT DONE
+Name: David Tu
+Email: david.tu2@csu.fullerton.edu
+Class: CPSC 486-02
+Assignment: Final Project
+Desciption: Program which renders a city
+Controls: 	UP ARROW: Forward
+			DOWN ARROW: Backwards
+			LEFT ARROW: Pan Left
+			RIGHT ARROW: Pan Right
+			W KEY: Ascend
+			S KEY: Descend
+			A KEY: Strafe Left
+			D KEY: Strafe Right
+			ESC KEY: End Game
+
+
+Defects List:
+1. Rotate up and down functions needs more works
+2. rand() doesn't seem sufficient enough to truly randomize
