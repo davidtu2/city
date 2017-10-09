@@ -24,7 +24,7 @@ public:
 			Even though 10 is within range of the block, the building can extend onto the street*/
 			if(i % 12 != 10 && i % 12 != 0){
 				/*randomSize can be [1, 2]
-				Note that we are adding 1 because we don't want 0 size or height)*/
+				Note that we are adding 1 because we don't want 0 size or height*/
 				float randomSize = rand() % 2 + 1;
 
 				float randomHeight;
@@ -38,7 +38,9 @@ public:
 
 				//Randomize my textures
 				if(buildingCount == 4){
-					//For every 4 buildings, change the texture for the next set
+					/*For every 4 buildings, change the texture for the next set.
+					Note that for every block, there are 2 sets of buildings, 
+					so each block will have eight buildings*/
 					buildingCount = 0;
 					randomTexture = rand() % 2;
 				}
