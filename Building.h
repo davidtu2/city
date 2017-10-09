@@ -96,7 +96,7 @@ public:
 	glEnd();//Not going to draw the bottom of the building
 
 	glDisable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, 0);
+	glBindTexture(GL_TEXTURE_2D, 0);
   }
 
 private:
