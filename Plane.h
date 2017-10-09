@@ -8,7 +8,7 @@ public:
 	int buildingCount = 0;
 	int randomTexture = 0;
 
-	/*City Model reference: 
+	/*City Model reference: spawnBuildings() from:
 	https://bitbucket.org/whleucka/cpsc-graphics-final/src/856ef81f67cf92f90c84368965331069d2de4e0f/src/main.cpp?at=master&fileviewer=file-view-default*/
 
 	/*Start at -2 depth because we want to skip over the street
