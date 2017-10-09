@@ -67,6 +67,7 @@ public:
 
   virtual ~Plane(){
  	_buildings.clear();
+	_textures.clear();
   }
 
   /*Start by drawing the blocks
