@@ -16,7 +16,7 @@ public:
   void draw(){
 	glEnable(GL_TEXTURE_2D);
 	glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, _texture);
+	glBindTexture(GL_TEXTURE_2D, _texture);
 
 	glBegin(GL_QUADS);
 

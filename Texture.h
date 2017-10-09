@@ -14,8 +14,8 @@ public:
 	glGenTextures(1, &_texture);
 	/*Bind the texture so that any texture commands called after
 	apply to this texture*/
-    glBindTexture(GL_TEXTURE_CUBE_MAP, _texture);
-    for (unsigned int i = 0; i < _faces.size(); i++){
+	glBindTexture(GL_TEXTURE_CUBE_MAP, _texture);
+	for (unsigned int i = 0; i < _faces.size(); i++){
 		_data = stbi_load(_faces[i].c_str(), 
 			&_width, &_height, 
 			&_colorChannels, 
@@ -31,7 +31,7 @@ public:
 		if (_data){
 			/*Generate the texture by using the uploaded data.
 			This needs to be done 6 times for each face*/
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
 				0,//Specifies the mipmap level
 				GL_RGB,//How to store the texture: rgba
 				_width, _height, 0,//Specifies border size
@@ -39,27 +39,27 @@ public:
 				GL_UNSIGNED_BYTE,//The datatype of the data
 				_data);
 			stbi_image_free(_data);
-        }else{
+		}else{
 			printf("Cubemap texture failed to load.\n");
 			stbi_image_free(_data);
 			exit(1);
-        }
-    }
+		}
+	}
 	/*Configure the texture with texture settings:
 	Bi-linear filtering is used to clean up any minor aliasing
 	when the camera rotates.*/
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	/*Texture coordinates that are exactly between two faces
 	might not hit an exact face (due to some hardware limitations)
 	so by using GL_CLAMP_TO_EDGE, OpenGL always return their edge values
 	whenever we sample between faces.*/
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	//Specify how to wrap each texture coordinate
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	/*If you don't clamp to edge 
 	then you might get a visible seam on the edges of your textures*/
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
   }
 
   Texture(std::string path){

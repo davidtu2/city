@@ -203,18 +203,18 @@ public:
 	}else if(isKeyPressed('D')){
 		camera.sideStepRight();
 	}else if(isKeyPressed('X')){
-      	camera.rotateCameraUp();
-    }else if(isKeyPressed('Y')){
-      	camera.rotateCameraDown();
-    }else if(isKeyPressed('H')){
-      	light0.rotateUp();
-    }else if(isKeyPressed('G')){
-      	light0.rotateDown();
-    }else if(isKeyPressed('J')){
-      	light0.rotateLeft();
-    }else if(isKeyPressed('N')){
-      	light0.rotateRight();
-    }
+		camera.rotateCameraUp();
+	}else if(isKeyPressed('Y')){
+		camera.rotateCameraDown();
+	}else if(isKeyPressed('H')){
+		light0.rotateUp();
+	}else if(isKeyPressed('G')){
+		light0.rotateDown();
+	}else if(isKeyPressed('J')){
+		light0.rotateLeft();
+	}else if(isKeyPressed('N')){
+		light0.rotateRight();
+	}
 	return !msglError();
   }   
 };

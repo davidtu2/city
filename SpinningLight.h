@@ -86,8 +86,8 @@ private:
 
   void updateLightVectors(){
 	forward = glm::normalize(direction());
-    right = glm::normalize(glm::cross(forward, _tangent));
-    up = glm::normalize(glm::cross(right, forward));
+	right = glm::normalize(glm::cross(forward, _tangent));
+	up = glm::normalize(glm::cross(right, forward));
   }
 
   void debug(){
