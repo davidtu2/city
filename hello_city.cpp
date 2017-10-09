@@ -39,7 +39,7 @@ void msglVersion(void){
 class CityApp : public GLFWApp{
 private:
   Camera camera;
-  SpinningLight light0;//TODO: Make this my "Moon"
+  SpinningLight light0;
   World* city;
   glm::mat4 modelViewMatrix;
   glm::mat4 projectionMatrix;
@@ -155,7 +155,6 @@ public:
 
   bool render(){
 	glm::vec4 _light0;//This will be the new transformed light position
-	GLfloat currentFrame = (GLfloat)glfwGetTime();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	std::tuple<int, int> w = windowSize();

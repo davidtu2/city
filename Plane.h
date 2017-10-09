@@ -5,6 +5,7 @@ public:
 	Texture* _texture1 = new Texture("textures/building2.jpg");
 	_textures.push_back(_texture);
 	_textures.push_back(_texture1);
+	//In the future, add more textures here
 	int buildingCount = 0;
 	int randomTexture = 0;
 
