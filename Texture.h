@@ -1,7 +1,5 @@
 class Texture{
 public:
-  /*Note the use of multiple Texture constructor signatures
-  serving different purposes*/
   Texture(){
 	_faces = {"textures/right.tga", 
 		"textures/left.tga", 

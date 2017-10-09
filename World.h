@@ -59,7 +59,7 @@ public:
 		3 * sizeof(float),//How much data per row
 		(void*)0);//How much data I need to skip over
 
-		_skybox = new Texture();
+	_skybox = new Texture();
   }
         
   virtual ~World(){

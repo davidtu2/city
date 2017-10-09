@@ -3,7 +3,8 @@ Email: david.tu2@csu.fullerton.edu
 Class: CPSC 486-02
 Assignment: Final Project
 Desciption: Program which renders a city
-Controls: 	UP ARROW: Forward
+Controls:	
+			UP ARROW: Forward
 			DOWN ARROW: Backwards
 			LEFT ARROW: Pan Left
 			RIGHT ARROW: Pan Right
