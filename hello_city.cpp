@@ -60,7 +60,7 @@ private:
 
 public:
   CityApp(int argc, char* argv[]):GLFWApp(argc, argv, 
-	std::string("CPSC 486 Final Project: City by David Tu").c_str(), 600, 600){}
+	std::string("CPSC 486-02 Final Project: City by David Tu").c_str(), 600, 600){}
 
   void initCamera(){
 	//Set the camera in this position

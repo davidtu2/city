@@ -1,44 +1,65 @@
 class Plane{
 public:
   Plane(int size):_size(size), _block(10.0f){
-	_building1 = new Texture("textures/building.jpg");
-	_building2 = new Texture("textures/building2.jpg");
+	Texture* _texture = new Texture("textures/building.jpg");
+	Texture* _texture1 = new Texture("textures/building2.jpg");
+	_textures.push_back(_texture);
+	_textures.push_back(_texture1);
+	int buildingCount = 0;
+	int randomTexture = 0;
 
-	/*Proceduaral generation reference: 
+	/*City Model reference: 
 	https://bitbucket.org/whleucka/cpsc-graphics-final/src/856ef81f67cf92f90c84368965331069d2de4e0f/src/main.cpp?at=master&fileviewer=file-view-default*/
+
+	/*Start at -2 depth because we want to skip over the street
+	We are going negative because we want to make the buildings along negative z
+	"j" will be the z values for the buildings*/
 	for(int j = -2; j > -_size - 6; j -= 6){
-		//101 iterations. This is the x value
-		for(int i = 0; i < _size + 6; i += 2){
-			if(i % 12 != 10 && i % 12 != 0){//x value = {2, 4, 6, 8}
-				/*randomSize = [1, 2]
-				(We are adding 1 because we don't want 0 size/height)*/
+		//101 iterations. "i" will be the x values for the buildings
+		for(int i = 0; i < _size + 6; i += 2){		
+			/*Let's start randomizing the heights and sizes of the buildings.
+			Since the above for loop increments by 2,
+			this checks if [0, 2, 4, 6, 8, 10] is not equal to 0 AND 10
+			We do not want 0 or 10 because we don't want to draw buildings on the street
+			Even though 10 is within range of the block, the building can extend onto the street*/
+			if(i % 12 != 10 && i % 12 != 0){
+				/*randomSize can be [1, 2]
+				Note that we are adding 1 because we don't want 0 size or height)*/
 				float randomSize = rand() % 2 + 1;
+
 				float randomHeight;
-				if(rand() % 5 + 1 == 1){
-					//randomHeight = [1, 12] (Make a taller building)
-					randomHeight = rand() % 12 + 1;
+				if(rand() % 5 == 0){
+					//randomHeight can be [1, 25] (Make a taller building)
+					randomHeight = rand() % 25 + 1;
 				}else{
-					//randomHeight = [1, 7] (Make a shorter building)
-					randomHeight = rand() % 7 + 1;
+					//randomHeight can be [1, 5] (Make a shorter building)
+					randomHeight = rand() % 5 + 1;
 				}
-				int randomTexture = rand() % 2;
+
+				//Randomize my textures
+				if(buildingCount == 4){
+					//For every 4 buildings, change the texture for the next set
+					buildingCount = 0;
+					randomTexture = rand() % 2;
+				}
+
+				buildingCount++;
+
 				if(randomTexture == 0){
-					_building = new Building(i, 
-						0.0f, 
-						j, 
-						randomSize, 
-						randomHeight, 
-						_building1->getTexture());
+					Building* _building = new Building(i,//x will be [2, 4, 6, 8]
+						j,//Starting at -2, z will be increments of 6 in the negative z
+						randomSize,//Can be [1, 2]
+						randomHeight,//Can be [1, 25]
+						_textures[0]->getTexture());
+					_buildings.push_back(_building);
 				}else{
-					_building = new Building(i, 
-						0.0f, 
-						j, 
-						randomSize, 
-						randomHeight, 
-						_building2->getTexture());
+					Building* _building = new Building(i,
+						j,
+						randomSize,
+						randomHeight,
+						_textures[1]->getTexture());
+					_buildings.push_back(_building);
 				}
-				printf("The random texture is %d.\n", randomTexture);
-				_buildings.push_back(_building);
 			}
 		}
 	}
@@ -46,7 +67,6 @@ public:
 
   virtual ~Plane(){
  	_buildings.clear();
-	delete _building;
   }
 
   /*Start by drawing the blocks
@@ -104,7 +124,5 @@ private:
   int _size;
   float _block;//Size of the block (a.k.a. the length of the "street")
   std::vector<Building*> _buildings;
-  Building* _building;//Building to be inserted into XZ's vector
-  Texture* _building1;
-  Texture* _building2;
+  std::vector<Texture*> _textures;
 };
