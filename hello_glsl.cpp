@@ -1,354 +1,679 @@
-// 
-// Michael Shafae
-// mshafae at fullerton.edu
-// 
-// A toy program which renders a teapot and two light sources. 
-//
-//
-
 #include <tuple>
 #include <cstdlib>
 #include <cstdio>
 #include <sys/time.h>
-
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
-
 #include "GLFWApp.h"
 #include "GLSLShader.h"
-#include "glut_teapot.h"
+#include <vector>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"//For textures
+#include "bitmap.h"
 
 void msglVersion(void){
-  fprintf(stderr, "OpenGL Version Information:\n");
-  fprintf(stderr, "\tVendor: %s\n", glGetString(GL_VENDOR));
-  fprintf(stderr, "\tRenderer: %s\n", glGetString(GL_RENDERER));
-  fprintf(stderr, "\tOpenGL Version: %s\n", glGetString(GL_VERSION));
-  fprintf(stderr, "\tGLSL Version: %s\n",
-          glGetString(GL_SHADING_LANGUAGE_VERSION));
+	fprintf(stderr, "OpenGL Version Information:\n");
+	fprintf(stderr, "\tVendor: %s\n", glGetString(GL_VENDOR));
+	fprintf(stderr, "\tRenderer: %s\n", glGetString(GL_RENDERER));
+	fprintf(stderr, "\tOpenGL Version: %s\n", glGetString(GL_VERSION));
+	fprintf(stderr, "\tGLSL Version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
 }
 
 class SpinningLight{
-public:
-  SpinningLight( ){ }
-  SpinningLight(glm::vec3& color, glm::vec3& position, glm::vec3& center) :
-    _rotationDelta(0.05), _color(color), _position(position), _center(center), _savedColor(color), _isOn(true){
-      glm::vec3 random_vector = glm::sphericalRand(1.0);
-      glm::vec3 d = direction( );
-      _tangent = glm::cross(d, random_vector);
-    }
+	public:
+		SpinningLight(){
+		
+		}
 
-  glm::vec4 color( ){return glm::vec4(_color, 1.0);}
-  glm::vec4 position( ){return glm::vec4(_position, 1.0);}
+		SpinningLight(glm::vec3& color, glm::vec3& position, glm::vec3& center):_rotationDelta(0.01), _color(color), _position(position), _center(center), _savedColor(color), _isOn(true){
+			glm::vec3 d = direction();//Get the vector from the light to the center of the world
+			glm::vec3 random_vector = glm::sphericalRand(1.0);//Get a random vector of unit length = 1
+			//You'll get a vector that's perp to both operands. This vector will be like worldUp to your forward vector, d
+			_tangent = glm::normalize(glm::cross(d, random_vector));//Modified to also normalize. This may affect roll()
+			updateLightVectors();
+		}
+
+		glm::vec4 color(){//getters
+			return glm::vec4(_color, 1.0);
+		}
+
+		glm::vec4 position(){
+			return glm::vec4(_position, 1.0);
+		}
+
+		//NOTE: All rotation methods used to determine ortho basis first
+		void rotateUp(){//Create a rotation matrix that rotates about the right axis
+			glm::mat3 rotationMatrix = glm::rotate(_rotationDelta, right);//Added negative sign
+			_tangent = rotationMatrix * up;//Now rotate the "worldUp" about the right axis
+			_position = rotationMatrix * _position;
+		}
+
+		void rotateDown(){
+			glm::mat3 rotationMatrix = glm::rotate(-_rotationDelta, right);
+			_tangent = rotationMatrix * up;
+			_position = rotationMatrix * _position;
+		}
+
+		void rotateLeft(){//Create a rotation matrix that rotates about the up axis
+			glm::mat3 rotationMatrix = glm::rotate(_rotationDelta, up);
+			_position = rotationMatrix * _position;
+		}
+
+		void rotateRight(){
+			glm::mat3 rotationMatrix = glm::rotate(-_rotationDelta, up);
+			_position = rotationMatrix * _position;
+		}
+
+		void roll(){
+			glm::mat3 m = glm::rotate(-_rotationDelta, direction());
+			_tangent = m * _tangent;
+		}
   
-  void rotateUp( ){
-    glm::vec3 f = direction( );
-    glm::vec3 _up = glm::normalize(_tangent);
-    glm::vec3 s = glm::normalize(glm::cross(f, _up));
-    glm::vec3 u = glm::cross(s, f);
-    glm::mat3 m = glm::rotate(_rotationDelta, s);
-    _tangent = m * u;
-    _position = m * _position;
-  }
+		void toggle(){
+			_isOn = !_isOn;
+			if(_isOn){
+				_color = _savedColor;
+			}else{
+				_color = glm::vec3(0.0, 0.0, 0.0);
+			}
+		}
 
-  void rotateDown( ){
-    glm::vec3 f = direction( );
-    glm::vec3 _up = glm::normalize(_tangent);
-    glm::vec3 s = glm::normalize(glm::cross(f, _up));
-    glm::vec3 u = glm::cross(s, f);
-    glm::mat3 m = glm::rotate(_rotationDelta, s);
-    _tangent = m * u;
-    _position = m * _position;
-  }
-
-  void rotateLeft( ){
-    glm::vec3 f = glm::normalize(direction( ));
-    glm::vec3 _up = glm::normalize(_tangent);
-    glm::vec3 s = glm::normalize(glm::cross(f, _up));
-    glm::vec3 u = glm::cross(s, f);
-    glm::mat3 m = glm::rotate(_rotationDelta, u);
-    _position = m * _position;
-  }
-
-  void rotateRight( ){
-    glm::vec3 f = glm::normalize(direction( ));
-    glm::vec3 _up = glm::normalize(_tangent);
-    glm::vec3 s = glm::normalize(glm::cross(f, _up));
-    glm::vec3 u = glm::cross(s, f);
-    glm::mat3 m = glm::rotate(_rotationDelta, u);
-    _position = m * _position;
-  }
-
-  void roll( ){
-    glm::mat3 m = glm::rotate(-_rotationDelta, direction( ));
-    _tangent = m * _tangent;
-  }
-  
-  void toggle( ){
-    _isOn = !_isOn;
-    if( _isOn ){
-      _color = _savedColor;
-    }else{
-      _color = glm::vec3(0.0, 0.0, 0.0);
-    }
-  }
-
-  void draw( ){
-
-  }
 private:
-  float _rotationDelta;
-  glm::vec3 _color;
-  glm::vec3 _position;
-  glm::vec3 _center;
-  glm::vec3 _tangent;
-  glm::vec3 _savedColor;
-  bool _isOn;
+		float _rotationDelta;
+		glm::vec3 _color;
+		glm::vec3 _position;
+		glm::vec3 _center;
+		glm::vec3 _tangent;//Similar to worldUp in my Camera class
+		glm::vec3 _savedColor;
+		bool _isOn;
+		glm::vec3 forward;//Light Vectors
+		glm::vec3 up;
+		glm::vec3 right;
   
-  glm::vec3 direction( ){
-    glm::vec3 d;
-    d = glm::normalize(_center - _position);
-    return d;
-  }
+		glm::vec3 direction(){
+			glm::vec3 d;
+			d = glm::normalize(_center - _position);
+			return d;
+		}
 
-  void debug( ){
-    std::cerr << "position " << glm::to_string(_position) << "(" << glm::length(_position) << ")" << "\ncenter " << glm::to_string(_center) << "\ntangent " << glm::to_string(_tangent) << "(" << glm::length(_tangent) << ")" << std::endl << std::endl;
-  }
+		void updateLightVectors(){
+			forward = glm::normalize(direction());
+    		right = glm::normalize(glm::cross(forward, _tangent));
+    		up = glm::normalize(glm::cross(right, forward));
+		}
+
+		void debug(){
+			std::cerr << "position " << glm::to_string(_position) << "(" << glm::length(_position) << ")" << "\ncenter " << glm::to_string(_center) << "\ntangent " << glm::to_string(_tangent) << "(" << 
+			glm::length(_tangent) << ")" << std::endl << std::endl;
+		}
+};
+
+class Camera{
+	public:
+		Camera(	glm::vec3 eyePos = glm::vec3(0.0f, 0.0f, 0.0f))//Initialized eyePos 
+				:_forward(glm::vec3(0.0f, 0.0f, -1.0f)),//Initialized forward
+				_worldUp(glm::vec3(0.0f, 1.0f, 0.0f)),//Initialied up 
+				_speed(1.0f),
+				_fovy(45.0f),
+				_rotationDelta(0.05f){
+					_position = eyePos;
+					updateCameraVectors();
+		}
+
+		glm::mat4 getViewMatrix(){
+			return glm::lookAt(_position, _position + _forward, _up);//position + forward = what you are looking at because the ortho vectors NEVER change in value, just the position!!!
+		}
+
+		GLfloat getFovy(){
+			return _fovy;
+		}
+
+		glm::vec3 getPosition() {
+			return _position;
+		}
+
+		void moveForwards(){
+			_position += _forward * _speed;
+		}
+
+		void moveBackwards(){
+			_position -= _forward * _speed;
+		}
+
+		void sideStepLeft(){
+			_position -= _right * _speed;
+		}
+
+		void sideStepRight(){
+			_position += _right * _speed;
+		}
+
+		void ascend(){
+			_position += _up * _speed;
+		}
+
+		void descend(){
+			_position -= _up * _speed;
+		}
+
+		void rotateCameraUp(){//Create a rotation matrix that rotates about the right axis
+			glm::mat3 rotationMatrix = glm::rotate(_rotationDelta, _right);
+			_up = rotationMatrix * _up;//Rotate the up and the forward
+			_forward = rotationMatrix * _forward;
+		}
+
+		void rotateCameraDown(){
+			glm::mat3 rotationMatrix = glm::rotate(-_rotationDelta, _right);//COUNTER CLOCKWISE???
+			_up = rotationMatrix * _up;
+			_forward = rotationMatrix * _forward;
+		}
+
+		void panCameraLeft(){
+			glm::mat3 rotationMatrix = glm::rotate(_rotationDelta, _up);
+			_forward = rotationMatrix * _forward;//Rotate the gaze, forward and the right
+			_right = rotationMatrix * _right;
+		}
+
+		void panCameraRight(){
+			glm::mat3 rotationMatrix = glm::rotate(-_rotationDelta, _up);
+			_forward = rotationMatrix * _forward;
+			_right = rotationMatrix * _right;
+		}
+
+	private:
+		glm::vec3 _position;//eyePosition
+		glm::vec3 _forward;
+		glm::vec3 _up;//Up vector
+		glm::vec3 _right;
+		glm::vec3 _worldUp;
+		GLfloat _speed;//Speed of strafe, forward, backward, ascend and descend
+		GLfloat _fovy;//a.k.a. zoom
+		GLfloat _rotationDelta;
+
+		void updateCameraVectors(){//Finds the orthonormal basis
+			_forward = glm::normalize(_forward);
+			_right = glm::normalize(glm::cross(_forward, _worldUp));
+			_up = glm::normalize(glm::cross(_right, _forward));
+		}
+};
+
+class Plane{
+	public:
+		Plane(int size):_size(size){
+
+		}
+
+		virtual ~Plane(){
+			printf("Calling Plane destructor.\n");
+		}
+
+		void draw(){//Start by drawing the blocks (The regions where the buildings will sit on top of)
+			float block = 10.0f;//Size of the block (a.k.a. the length of the "street")
+			glColor4f(0.412, 0.412, 0.412, 1.0f);
+			glBegin(GL_QUADS);//Start drawing a 17 x 17 quadrilateral
+			for(int j = 0; j < _size; j += 12){//Go to one row
+				for(int i = 0; i < _size; i += 12){//Draw all the "columns" of the row
+					glVertex3f(0.0f + i, 0.0f, 0.0f - j);//Bottom Left
+					glVertex3f(0.0f + block + i, 0.0f, 0.0f - j);//Bottom right
+					glVertex3f(0.0f + block + i, 0.0f, 0.0f - block - j);//Top right
+					glVertex3f(0.0f + i, 0.0f, 0.0f - block - j);//Top left
+				}//>>Drawing quads will always be like this
+			}
+			glEnd();//Finish drawing
+
+			glColor4f(1.0, 1.0, 1.0, 1.0);//Now draw the outer boundaries
+			glBegin(GL_LINES);//Start drawing lines. Let's start with the left boundary
+			glVertex3f(-2.0f, 0.0f, 2.0f);//Bottom left corner of the map
+			glVertex3f(-2.0f, 0.0f, -_size - 8);//Top left corner of the map
+			glVertex3f(-2.0f, 0.0f, -_size - 8);//Next, let's do the back boundary. Continuing from where we left off, this is the top left corner of the map
+			glVertex3f(_size + 8, 0.0f, -_size - 8);//Top right corner of the map
+			glVertex3f(_size + 8, 0.0f, -_size - 8);//Right boundary: top right corner of the map
+			glVertex3f(_size + 8, 0.0f, 2.0f);//Bottom right corner of the map
+			glVertex3f(_size + 8, 0.0f, 2.0f);//Front boundary: bottom right corner of the map
+			glVertex3f(-2.0f, 0.0f, 2.0f);//Back to where we started: the bottom left corner of the map
+			glEnd();//Finish drawing
+		}
+
+	private:
+		int _size;
+};
+
+class Building{
+	public:
+		Building(float x, float y, float z, float size, float height):_x(x), _y(y), _z(z), _size(size), _height(height){
+
+		}
+        
+		virtual ~Building(){
+			printf("Calling Building destructor.\n");
+		}
+        
+		void draw(){
+			glBegin(GL_QUADS);//Start drawing quads
+			glNormal3f(0.0, 0.0, 1.0);//Facing towards me -> Front facing
+			glColor4f(1.0f, 0.0f, 0.0f, 1.0f);//Random coloring?????
+			glVertex3f(-_size + _x, _height + _y,  _size + _z);//Top left
+			glVertex3f(-_size + _x, _y,  _size + _z);//Bottom left
+			glVertex3f(_size + _x, _y,  _size + _z);//Bottom right
+			glVertex3f(_size + _x, _height + _y,  _size + _z);//Top right
+			glNormal3f(1.0, 0.0, 0.0);//Right facing
+			glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
+			glVertex3f(_size + _x, _height + _y,  _size + _z);//Top left
+			glVertex3f(_size + _x, _y,  _size + _z);//Bottom left
+			glVertex3f(_size + _x, _y,  -_size + _z);//Bottom right
+			glVertex3f(_size + _x, _height + _y,  -_size + _z);//Top right
+			glNormal3f(-1.0, 0.0, 0.0);//Left facing
+			glColor4f( 0.4f, 0.4f, 0.4f, 1.0f);
+			glVertex3f(-_size + _x, _height + _y,  -_size + _z);//Top left
+			glVertex3f(-_size + _x, _y,  -_size + _z);//Bottom left
+			glVertex3f(-_size + _x, _y,  _size + _z);//Bottom right
+			glVertex3f(-_size + _x, _height + _y,  _size + _z);//Top right
+			glNormal3f(0.0, 0.0, -1.0);//Facing away from me -> Rear facing
+			glColor4f( 0.3f, 0.3f, 0.3f, 1.0f);
+			glVertex3f(-_size + _x, _y,  -_size + _z);//Bottom left
+			glVertex3f(-_size + _x, _height + _y,  -_size + _z);//Top left
+			glVertex3f(_size + _x, _height + _y,  -_size + _z);//Top right
+			glVertex3f(_size + _x, _y,  -_size + _z);//Bottom right
+			glNormal3f(0.0, 1.0, 0.0);//Facing straight up -> Top facing
+			glColor4f( 0.6f, 0.6f, 0.6f, 1.0f);
+			glVertex3f(-_size + _x, _height + _y,  -_size + _z);//Top left
+			glVertex3f(-_size + _x, _height + _y,  _size + _z);//Bottom left
+			glVertex3f(_size + _x, _height + _y,  _size + _z);//Bottom right
+			glVertex3f(_size + _x, _height + _y,  -_size + _z);//Top right
+			glEnd();//Not going to draw the bottom of the building
+		}
+
+	private:
+		float _x;
+		float _y;
+		float _z;
+		float _height;
+		float _size;
 };
 
 class HelloGLSLApp : public GLFWApp{
-private:
-  float rotationDelta;
+	private:
+		Camera camera;
+		SpinningLight light0;//This can act as my "Moon" or "Sun"
+		int planeSize = 196;//Size of the XZ plane
+		Plane* XZ; //the XZ plane we will we working with
+		Building* building;//Building model to be inserted into Buildings vector
+		std::vector<Building*> buildings;//Vector of Buildings
+		glm::mat4 modelViewMatrix;
+		glm::mat4 projectionMatrix;
+		glm::mat4 normalMatrix;
+		GLSLProgram shaderProgram_A;
+		unsigned int uModelViewMatrix_A;//Variables to set uniform params for lighting fragment shader
+		unsigned int uProjectionMatrix_A;
+		unsigned int uNormalMatrix_A;
+		unsigned int uLight0_position_A;
+		unsigned int uLight0_color_A;
 
-  glm::vec3 centerPosition;
-  glm::vec3 eyePosition;
-  glm::vec3 upVector;
-
-  glm::mat4 modelViewMatrix;
-  glm::mat4 projectionMatrix;
-  glm::mat4 normalMatrix;
+		/*GLSLProgram shaderProgram_B;
+		unsigned int skyboxVAO, skyboxVBO;
+		unsigned int cubemapTexture;
+		unsigned int uModelViewMatrix_B;
+		unsigned int uProjectionMatrix_B;
+		glm::mat4 modelViewMatrix_B;
+		glm::mat4 projectionMatrix_B;*/
+		GLSLProgram shaderProgram_B;
+		unsigned int uModelViewMatrix_B;
+		unsigned int uProjectionMatrix_B;
+		glm::mat4 modelViewMatrix_B;
+		glm::mat4 projectionMatrix_B;
+		unsigned int m_texture;
+		unsigned int skybox_texture;
   
-  GLSLProgram shaderProgram_A;
+	public:
+		HelloGLSLApp(int argc, char* argv[]):GLFWApp(argc, argv, std::string("City").c_str(), 600, 600){
 
-  SpinningLight light0;
-  SpinningLight light1; 
+		}
 
-  // Variables to set uniform params for lighting fragment shader 
-  unsigned int uModelViewMatrix_A;
-  unsigned int uProjectionMatrix_A;
-  unsigned int uNormalMatrix_A;
-  unsigned int uLight0_position_A;
-  unsigned int uLight0_color_A;
-  unsigned int uLight1_position_A;
-  unsigned int uLight1_color_A;
-  
-public:
-  HelloGLSLApp(int argc, char* argv[]) :
-    GLFWApp(argc, argv, std::string("Camera Control").c_str( ), 
-            600, 600){ }
-  
-  void initCenterPosition( ){
-    centerPosition = glm::vec3(0.0, 0.0, 0.0);
-  }
-  
-  void initEyePosition( ){
-    eyePosition = glm::vec3(0.0, 0.0, 5.0);
-  }
-
-  void initUpVector( ){
-    upVector = glm::vec3(0.0, 1.0, 0.0);
-  }
-
-  void initRotationDelta( ){
-    rotationDelta = 0.05;
-  }
+		void initCamera(){
+			camera = Camera(glm::vec3(0.0f, 0.0f, 3.0f));//Let's set the camera in this position
+		}
    
-  void initLights( ){
-    glm::vec3 color0(1.0, 0.0, 0.0);
-    glm::vec3 position0(0.0, 5.0, 10.0);
-    glm::vec3 color1(0.0, 0.0, 1.0);
-    glm::vec3 position1(0.0, 5.0, -10.0);
-    light0 = SpinningLight(color0, position0, centerPosition);
-    light1 = SpinningLight(color1, position1, centerPosition);
-  }
-    
-  void rotateCameraLeft( ){
-    glm::vec3 f = glm::normalize(-eyePosition);
-    glm::vec3 _up = glm::normalize(upVector);
-    glm::vec3 s = glm::normalize(glm::cross(f, _up));
-    glm::vec3 u = glm::cross(s, f);
-    glm::mat3 m = glm::rotate(rotationDelta, u);
-    eyePosition = m * eyePosition;
-  }
+		void initLights(){
+			glm::vec3 color0(0.0, 0.0, 1.0);
+			glm::vec3 position0(0.0, 5.0, 10.0);
+			glm::vec3 centerPosition(0.0, 0.0, 0.0);
+			light0 = SpinningLight(color0, position0, centerPosition);
+		}
 
-  void rotateCameraRight( ){
-    glm::vec3 f = glm::normalize(-eyePosition);
-    glm::vec3 _up = glm::normalize(upVector);
-    glm::vec3 s = glm::normalize(glm::cross(f, _up));
-    glm::vec3 u = glm::cross(s, f);
-    glm::mat3 m = glm::rotate(-rotationDelta, u);
-    eyePosition = m * eyePosition;
-  }
+		unsigned int loadCubemap(std::vector<std::string> faces){
+    		unsigned int textureID;
+    		glGenTextures(1, &textureID);
+    		glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
-  void rotateCameraUp( ){
-    glm::vec3 f = glm::normalize(-eyePosition);
-    glm::vec3 _up = glm::normalize(upVector);
-    glm::vec3 s = glm::normalize(glm::cross(f, _up));
-    glm::vec3 u = glm::cross(s, f);
-    glm::mat3 m = glm::rotate(-rotationDelta, s);
-    upVector = m * u;
-    eyePosition = m * eyePosition;
-  }
+    		int width, height, nrChannels;
+    		for (unsigned int i = 0; i < faces.size(); i++){
+        		unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        		if (data){
+            		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            		stbi_image_free(data);
+        		}else{
+            		std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+            		stbi_image_free(data);
+        		}
+    		}
+    		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    		return textureID;
+		}
 
-  void rotateCameraDown( ){
-    glm::vec3 f = glm::normalize(-eyePosition);
-    glm::vec3 _up = glm::normalize(upVector);
-    glm::vec3 s = glm::normalize(glm::cross(f, _up));
-    glm::vec3 u = glm::cross(s, f);
-    glm::mat3 m = glm::rotate(rotationDelta, s);
-    upVector = m * u;
-    eyePosition = m * eyePosition;
-  }
+		bool begin(){
+			msglError();
+			initCamera();
+			initLights();
 
+			const char* vertexShaderSource_A = "lighting.vert.glsl";//Load shader program A
+			const char* fragmentShaderSource_A = "lighting.frag.glsl";
+			FragmentShader fragmentShader_A(fragmentShaderSource_A);
+			VertexShader vertexShader_A(vertexShaderSource_A);
+			shaderProgram_A.attach(vertexShader_A);
+			shaderProgram_A.attach(fragmentShader_A);
+			shaderProgram_A.link();
+			shaderProgram_A.activate();
+			printf("Shader program A built from %s and %s.\n", vertexShaderSource_A, fragmentShaderSource_A);
+			if(shaderProgram_A.isActive()){
+				printf("Shader program A is loaded and active with id %d.\n", shaderProgram_A.id());
+			}else{
+				printf("Shader program A did not load and activate correctly. Exiting.");
+				exit(1);
+			}
 
-  bool begin( ){
-    msglError( );
-    initCenterPosition( );
-    initEyePosition( );
-    initUpVector( );
-    initRotationDelta( );
-    initLights( );
-    
-    // Load shader program A
-    const char* vertexShaderSource_A = "blinn_phong.vert.glsl";
-    const char* fragmentShaderSource_A = "blinn_phong.frag.glsl";
-    FragmentShader fragmentShader_A(fragmentShaderSource_A);
-    VertexShader vertexShader_A(vertexShaderSource_A);
-    shaderProgram_A.attach(vertexShader_A);
-    shaderProgram_A.attach(fragmentShader_A);
-    shaderProgram_A.link( );
-    shaderProgram_A.activate( );
-    
-    printf("Shader program A built from %s and %s.\n",
-           vertexShaderSource_A, fragmentShaderSource_A);
-    if( shaderProgram_A.isActive( ) ){
-      printf("Shader program is loaded and active with id %d.\n", shaderProgram_A.id( ) );
-    }else{
-      printf("Shader program did not load and activate correctly. Exiting.");
-      exit(1);
-    }
-    
-        // Set up uniform variables for shader program A
-    uModelViewMatrix_A = glGetUniformLocation(shaderProgram_A.id( ), "modelViewMatrix");
-    uProjectionMatrix_A = glGetUniformLocation(shaderProgram_A.id( ), "projectionMatrix");
-    uNormalMatrix_A = glGetUniformLocation(shaderProgram_A.id( ), "normalMatrix");
-    uLight0_position_A = glGetUniformLocation(shaderProgram_A.id( ), "light0_position");
-    uLight0_color_A = glGetUniformLocation(shaderProgram_A.id( ), "light0_color");
-    uLight1_position_A = glGetUniformLocation(shaderProgram_A.id( ), "light1_position");
-    uLight1_color_A = glGetUniformLocation(shaderProgram_A.id( ), "light1_color");
+			const char* vertexShaderSource_B = "skybox.vert.glsl";//Load shader program B
+			const char* fragmentShaderSource_B = "skybox.frag.glsl";
+			FragmentShader fragmentShader_B(fragmentShaderSource_B);
+			VertexShader vertexShader_B(vertexShaderSource_B);
+			shaderProgram_B.attach(vertexShader_B);
+			shaderProgram_B.attach(fragmentShader_B);
+			shaderProgram_B.link();
+			shaderProgram_B.activate();
+			printf("Shader program B built from %s and %s.\n", vertexShaderSource_B, fragmentShaderSource_B);
+			if(shaderProgram_B.isActive()){
+				printf("Shader program B is loaded and active with id %d.\n", shaderProgram_B.id());
+			}else{
+				printf("Shader program B did not load and activate correctly. Exiting.");
+				exit(1);
+			}
 
-    glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+			uModelViewMatrix_A = glGetUniformLocation(shaderProgram_A.id(), "modelViewMatrix");//Set up uniform variables for shader program A
+			uProjectionMatrix_A = glGetUniformLocation(shaderProgram_A.id(), "projectionMatrix");
+			uNormalMatrix_A = glGetUniformLocation(shaderProgram_A.id(), "normalMatrix");
+			uLight0_position_A = glGetUniformLocation(shaderProgram_A.id(), "light0_position");
+			uLight0_color_A = glGetUniformLocation(shaderProgram_A.id(), "light0_color");
 
-    msglVersion( );
-    
-    return !msglError( );
-  }
+			uModelViewMatrix_B = glGetUniformLocation(shaderProgram_B.id(), "modelViewMatrix");
+			uProjectionMatrix_B = glGetUniformLocation(shaderProgram_B.id(), "projectionMatrix");
+
+			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+			glEnable(GL_DEPTH_TEST);
+			glDepthFunc(GL_LESS);
+
+			//drawXZPlane();
+			//drawBuildings();
+
+			CBitmap skybox("home/me/Desktop/city/skybox.bmp");//read bitmap image
+    		glGenTextures(1, &m_texture);//allocate 1 texture
+    		glBindTexture(GL_TEXTURE_2D, skybox_texture);//bind this texture to be active
+			glUniform1i(skybox_texture, 0);//pass texture location to vertex shader
+    		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, skybox.GetWidth(), skybox.GetHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, skybox.GetBits());
+    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);//specify minificaton filtering
+    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);//specify magnificaton filtering
+    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);//specify texture coordinate treatment
+    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);//specify texture coordinate treatment
+    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);//specify texture coordinate treatment
+    		glBindTexture(GL_TEXTURE_2D, 0);
+			/*float skyboxVertices[] = {//positions          
+        		-1.0f,  1.0f, -1.0f,
+        		-1.0f, -1.0f, -1.0f,
+         		1.0f, -1.0f, -1.0f,
+         		1.0f, -1.0f, -1.0f,
+         		1.0f,  1.0f, -1.0f,
+        		-1.0f,  1.0f, -1.0f,
+
+        		-1.0f, -1.0f,  1.0f,
+        		-1.0f, -1.0f, -1.0f,
+        		-1.0f,  1.0f, -1.0f,
+        		-1.0f,  1.0f, -1.0f,
+        		-1.0f,  1.0f,  1.0f,
+        		-1.0f, -1.0f,  1.0f,
+
+         		1.0f, -1.0f, -1.0f,
+         		1.0f, -1.0f,  1.0f,
+         		1.0f,  1.0f,  1.0f,
+         		1.0f,  1.0f,  1.0f,
+         		1.0f,  1.0f, -1.0f,
+         		1.0f, -1.0f, -1.0f,
+
+        		-1.0f, -1.0f,  1.0f,
+        		-1.0f,  1.0f,  1.0f,
+         		1.0f,  1.0f,  1.0f,
+         		1.0f,  1.0f,  1.0f,
+         		1.0f, -1.0f,  1.0f,
+        		-1.0f, -1.0f,  1.0f,
+
+        		-1.0f,  1.0f, -1.0f,
+         		1.0f,  1.0f, -1.0f,
+         		1.0f,  1.0f,  1.0f,
+         		1.0f,  1.0f,  1.0f,
+        		-1.0f,  1.0f,  1.0f,
+        		-1.0f,  1.0f, -1.0f,
+
+        		-1.0f, -1.0f, -1.0f,
+        		-1.0f, -1.0f,  1.0f,
+         		1.0f, -1.0f, -1.0f,
+         		1.0f, -1.0f, -1.0f,
+        		-1.0f, -1.0f,  1.0f,
+         		1.0f, -1.0f,  1.0f
+    		};
+
+    		glGenVertexArrays(1, &skyboxVAO);//skybox VAO
+			glBindVertexArray(skyboxVAO);
+
+    		glGenBuffers(1, &skyboxVBO);
+    		glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    		
+			glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    		glEnableVertexAttribArray(0);
+    		glVertexAttribPointer(0, 
+				3, 
+				GL_FLOAT, 
+				GL_FALSE, 
+				3 * sizeof(float), 
+				(void*)0);
+
+			std::vector<std::string> faces{
+        		"right.jpg",
+        		"left.jpg",
+        		"top.jpg",
+        		"bottom.jpg",
+        		"back.jpg",
+        		"front.jpg"
+    		};
+
+    		cubemapTexture = loadCubemap(faces);*/
+			msglVersion();    
+			return !msglError();
+		}
   
-  bool end( ){
-    windowShouldClose( );
-    return true;
-  }
+		bool end(){
+			buildings.clear();
+			delete XZ;
+			delete building;
+			windowShouldClose();
+			return true;
+		}
   
-  void activateUniforms_A(glm::vec4& _light0, glm::vec4& _light1){
-    glUniformMatrix4fv(uModelViewMatrix_A, 1, false, glm::value_ptr(modelViewMatrix));    
-    glUniformMatrix4fv(uProjectionMatrix_A, 1, false, glm::value_ptr(projectionMatrix));
-    glUniformMatrix4fv(uNormalMatrix_A, 1, false, glm::value_ptr(normalMatrix));
-    glUniform4fv(uLight0_position_A, 1, glm::value_ptr(_light0));
-    glUniform4fv(uLight0_color_A, 1, glm::value_ptr(light0.color( )));
-    glUniform4fv(uLight1_position_A, 1, glm::value_ptr(_light1));
-    glUniform4fv(uLight1_color_A, 1, glm::value_ptr(light1.color( )));
-  }
-  
-  bool render( ){
-    glm::vec4 _light0;
-    glm::vec4 _light1;
+		void activateUniforms_A(glm::vec4& _light0){
+			glUniformMatrix4fv(uModelViewMatrix_A, 1, false, glm::value_ptr(modelViewMatrix));    
+			glUniformMatrix4fv(uProjectionMatrix_A, 1, false, glm::value_ptr(projectionMatrix));
+			glUniformMatrix4fv(uNormalMatrix_A, 1, false, glm::value_ptr(normalMatrix));
+			glUniform4fv(uLight0_position_A, 1, glm::value_ptr(_light0));
+			glUniform4fv(uLight0_color_A, 1, glm::value_ptr(light0.color()));
+		}
+
+		void drawXZPlane(){//X axis is 0 to positive values. Z axis is 0 to negative values. RGBA values are for the boundary lines
+			XZ = new Plane(planeSize);
+		}
+
+		void drawBuildings(){//Procedural generation
+			for(int j = -2; j > -planeSize - 6; j -= 6){
+				for(int i = 0; i < planeSize + 6; i += 2){//101 iterations. This is the x value
+					if(i % 12 != 10 && i % 12 != 0){//x value = {2, 4, 6, 8}
+						float randomSize = rand() % 2 + 1;//randomSize = [1, 2] (We are adding 1 because we don't want 0 size/height)
+						float randomHeight;
+						if(rand() % 5 + 1 == 1){//If I get a 1...
+							randomHeight = rand() % 12 + 1;//randomHeight = [1, 12] (Make a taller building)
+						}else{
+							randomHeight = rand() % 7 + 1;//randomHeight = [1, 7] (Make a shorter building)
+						}
+						building = new Building(i, 0.0f, j, randomSize, randomHeight);
+						buildings.push_back(building);
+					}
+				}
+			}
+		}
+
+		void drawSkybox() {
+     		glBegin(GL_QUADS);//Back
+     		glTexCoord2f(.5,1.0/3.0);
+     		glVertex3f(500,-500,-500);
+     		glTexCoord2f(.5,2.0/3.0);
+     		glVertex3f(500,500,-500);
+     		glTexCoord2f(.25,2.0/3.0);
+     		glVertex3f(-500,500,-500);
+     		glTexCoord2f(.25,1.0/3.0);
+     		glVertex3f(-500,-500,-500);
+     		glTexCoord2f(1,0.334);//Front
+     		glVertex3f(-500,-500,500);
+     		glTexCoord2f(1,0.665);
+     		glVertex3f(-500,500,500);
+     		glTexCoord2f(.75,0.665);
+     		glVertex3f(500,500,500);
+     		glTexCoord2f(.75,0.334);
+     		glVertex3f(500,-500,500);
+     		glTexCoord2f(0,0.334);//Left
+     		glVertex3f(-500,-500,500);
+     		glTexCoord2f(.25,0.334);
+     		glVertex3f(-500,-500,-500);
+     		glTexCoord2f(.25,0.665);
+     		glVertex3f(-500,500,-500);
+     		glTexCoord2f(0,0.665);
+     		glVertex3f(-500,500,500);
+     		glTexCoord2f(.5,0.334);//Right
+     		glVertex3f(500,-500,-500);
+     		glTexCoord2f(.75,0.334);
+     		glVertex3f(500,-500,500);
+     		glTexCoord2f(.75,0.665);
+     		glVertex3f(500,500,500);
+     		glTexCoord2f(.5,0.665);
+     		glVertex3f(500,500,-500);
+     		glTexCoord2f(.251,2.0/3.0);//Top
+     		glVertex3f(-500,500,-500);
+     		glTexCoord2f(.499,2.0/3.0);
+     		glVertex3f(500,500,-500);
+     		glTexCoord2f(.499,1.0);
+     		glVertex3f(500,500,500);
+     		glTexCoord2f(.251,1.0);
+     		glVertex3f(-500,500,500);
+     		glTexCoord2f(.251,1.0/3.0);//Bottom
+     		glVertex3f(-500,-500,-500);
+     		glTexCoord2f(.251,0.0/3.0);
+     		glVertex3f(-500,-500,500);
+     		glTexCoord2f(.499,0.0/3.0);
+     		glVertex3f(500,-500,500);
+     		glTexCoord2f(.499,1.0/3.0);
+     		glVertex3f(500,-500,-500);
+     		glEnd();
+		}
+
+		bool render(){
+			glm::vec4 _light0;//This will be the new transformed light position
+			GLfloat currentFrame = (GLfloat)glfwGetTime();
     
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    std::tuple<int, int> w = windowSize( );
-    double ratio = double(std::get<0>(w)) / double(std::get<1>(w));
+			std::tuple<int, int> w = windowSize();
+			double ratio = double(std::get<0>(w))/double(std::get<1>(w));
+			projectionMatrix = glm::perspective(double(camera.getFovy()), ratio, 0.1, 1000.0);
+	
+			//Position the light. Just multiply the light position by the viewMatrix since it's modelMatrix is untransformed anyway (view * (model = 1) * lightPos)
+			_light0 = camera.getViewMatrix() * light0.position();
 
-    projectionMatrix = glm::perspective(90.0, ratio, 1.0, 25.0);
+			glm::mat4 model = glm::mat4();//Load the Identity matrix
+			modelViewMatrix = camera.getViewMatrix() * model;
+			normalMatrix = glm::inverseTranspose(modelViewMatrix);
 
-    glm::mat4 lookAtMatrix = glm::lookAt(eyePosition, centerPosition, upVector);
+			shaderProgram_A.activate();
+			activateUniforms_A(_light0);
 
-    // Set light & material properties for the teapot;
-    // lights are transformed by current modelview matrix
-    // such that they are positioned correctly in the scene.
-    _light0 = lookAtMatrix * light0.position( );
-    _light1 = lookAtMatrix * light1.position( );
-    
-    modelViewMatrix = lookAtMatrix;
-    normalMatrix = glm::inverseTranspose(modelViewMatrix);
-    shaderProgram_A.activate( );
-    activateUniforms_A(_light0, _light1);
-    _glutSolidTeapot(1.0);
-    light0.draw( );
-    
-    if(isKeyPressed('Q')){
-      end( );      
-    }else if(isKeyPressed(GLFW_KEY_EQUAL)){
+			//XZ->draw();//Draw the grid
+			/*for(std::vector<Building*>::iterator it = buildings.begin(); it != buildings.end(); ++it){//Draw Buildings
+				(*it)->draw();
+			}*/
 
-    }else if(isKeyPressed(GLFW_KEY_MINUS)){
+        	/*glDepthFunc(GL_LEQUAL);//change depth function so depth test passes when values are equal to depth buffer's content
+			modelViewMatrix_B = glm::mat4(glm::mat3(camera.getViewMatrix()));//remove translation from the view matrix
+			projectionMatrix_B = glm::perspective(double(camera.getFovy()), ratio, 0.1, 1000.0);
+        	shaderProgram_B.activate();
+			glUniformMatrix4fv(uModelViewMatrix_B, 1, false, glm::value_ptr(modelViewMatrix_B));    
+			glUniformMatrix4fv(uProjectionMatrix_B, 1, false, glm::value_ptr(projectionMatrix_B));
+        	glBindVertexArray(skyboxVAO);//skybox cube
+        	glActiveTexture(GL_TEXTURE0);
+        	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        	glDrawArrays(GL_TRIANGLES, 0, 36);
+        	glBindVertexArray(0);
+        	glDepthFunc(GL_LESS);//set depth function back to default*/
+			//glDepthFunc(GL_LEQUAL);
+			glUseProgram(0);
+    		glEnable(GL_TEXTURE_2D);
+    		glBindTexture(GL_TEXTURE_2D, skybox_texture);
+			modelViewMatrix_B = glm::mat4(glm::mat3(camera.getViewMatrix()));//remove translation from the view matrix
+			projectionMatrix_B = glm::perspective(double(camera.getFovy()), ratio, 0.1, 1000.0);
+    		shaderProgram_B.activate();
+			glUniformMatrix4fv(uModelViewMatrix_B, 1, false, glm::value_ptr(modelViewMatrix_B));    
+			glUniformMatrix4fv(uProjectionMatrix_B, 1, false, glm::value_ptr(projectionMatrix_B));
+			//glUniform1i(skybox_texture, 0);//pass texture location to vertex shader
+    		drawSkybox();
+    		glUseProgram(0);
+    		glDisable(GL_TEXTURE_2D);
+    		glBindTexture(GL_TEXTURE_2D, 0);
+			//glDepthFunc(GL_LESS);
 
-    }else if(isKeyPressed('R')){
-      initEyePosition( );
-      initUpVector( );
-      initRotationDelta( );
-      initLights( );  
-      printf("Eye position, up vector and rotation delta reset.\n");
-    }else if(isKeyPressed(GLFW_KEY_LEFT)){
-      rotateCameraRight( );
-    }else if(isKeyPressed(GLFW_KEY_RIGHT)){
-      rotateCameraLeft( );
-    }else if(isKeyPressed(GLFW_KEY_UP)){
-      rotateCameraDown( );
-    }else if(isKeyPressed(GLFW_KEY_DOWN)){
-      rotateCameraUp( );
-    }else if(isKeyPressed('W')){
-      light0.rotateUp( );
-    }else if(isKeyPressed('S')){
-      light0.rotateUp( );
-    }else if(isKeyPressed('A')){
-      light0.rotateLeft( );
-    }else if(isKeyPressed('D')){
-      light0.rotateLeft( );
-    }else if(isKeyPressed('X')){
-      light0.roll( );
-    }else if(isKeyPressed('Y')){
-      light1.rotateUp( );
-    }else if(isKeyPressed('H')){
-      light1.rotateUp( );
-    }else if(isKeyPressed('G')){
-      light1.rotateLeft( );
-    }else if(isKeyPressed('J')){
-      light1.rotateLeft( );
-    }else if(isKeyPressed('N')){
-      light1.roll( );
-    }else if(isKeyPressed('1')){
-      light0.toggle( );
-    }else if(isKeyPressed('2')){
-      light1.toggle( );
-    }
-    return !msglError( );
-  }
-    
+			if(isKeyPressed('Q')){
+				end();      
+			}else if(isKeyPressed('R')){
+				initLights();  
+				printf("Lights reinitialized.\n");
+			}else if(isKeyPressed(GLFW_KEY_LEFT)){
+				camera.panCameraLeft();
+			}else if(isKeyPressed(GLFW_KEY_RIGHT)){
+				camera.panCameraRight();
+			}else if(isKeyPressed(GLFW_KEY_UP)){
+				camera.moveForwards();
+			}else if(isKeyPressed(GLFW_KEY_DOWN)){
+				camera.moveBackwards();
+			}else if(isKeyPressed('W')){
+				camera.ascend();//camera.rotateCameraUp();
+				//light0.rotateUp();
+			}else if(isKeyPressed('S')){
+				camera.descend();//camera.rotateCameraDown();
+				//light0.rotateDown();
+			}else if(isKeyPressed('A')){
+				camera.sideStepLeft();//light0.rotateLeft();
+			}else if(isKeyPressed('D')){
+				camera.sideStepRight();//light0.rotateRight();
+			}
+			return !msglError();
+		}   
 };
 
-
 int main(int argc, char* argv[]){
-  HelloGLSLApp app(argc, argv);
-  return app();
+	HelloGLSLApp app(argc, argv);
+	return app();
 }
-
