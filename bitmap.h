@@ -155,7 +155,9 @@ public:
 	}
 	
 	CBitmap(const char* Filename) : m_BitmapData(0), m_BitmapSize(0) {
+		printf("CBitmap().\n");
 		Load(Filename);
+		printf("Done with CBitmap().\n");
 	}
 	
 	~CBitmap() {

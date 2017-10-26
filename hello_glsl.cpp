@@ -309,20 +309,15 @@ class HelloGLSLApp : public GLFWApp{
 		unsigned int uLight0_position_A;
 		unsigned int uLight0_color_A;
 
-		/*GLSLProgram shaderProgram_B;
-		unsigned int skyboxVAO, skyboxVBO;
-		unsigned int cubemapTexture;
-		unsigned int uModelViewMatrix_B;
-		unsigned int uProjectionMatrix_B;
-		glm::mat4 modelViewMatrix_B;
-		glm::mat4 projectionMatrix_B;*/
 		GLSLProgram shaderProgram_B;
 		unsigned int uModelViewMatrix_B;
 		unsigned int uProjectionMatrix_B;
 		glm::mat4 modelViewMatrix_B;
 		glm::mat4 projectionMatrix_B;
-		unsigned int m_texture;
 		unsigned int skybox_texture;
+		unsigned int m_texture;
+		unsigned int skyboxVAO;
+		unsigned int skyboxVBO;
   
 	public:
 		HelloGLSLApp(int argc, char* argv[]):GLFWApp(argc, argv, std::string("City").c_str(), 600, 600){
@@ -347,12 +342,13 @@ class HelloGLSLApp : public GLFWApp{
 
     		int width, height, nrChannels;
     		for (unsigned int i = 0; i < faces.size(); i++){
-        		unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        		unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
         		if (data){
+					printf("Texture successfully loaded.\n");
             		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
             		stbi_image_free(data);
         		}else{
-            		std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+					printf("Cubemap texture failed to load.\n");
             		stbi_image_free(data);
         		}
     		}
@@ -414,21 +410,30 @@ class HelloGLSLApp : public GLFWApp{
 			glEnable(GL_DEPTH_TEST);
 			glDepthFunc(GL_LESS);
 
-			//drawXZPlane();
-			//drawBuildings();
+			drawXZPlane();
+			drawBuildings();
 
-			CBitmap skybox("home/me/Desktop/city/skybox.bmp");//read bitmap image
-    		glGenTextures(1, &m_texture);//allocate 1 texture
-    		glBindTexture(GL_TEXTURE_2D, skybox_texture);//bind this texture to be active
-			glUniform1i(skybox_texture, 0);//pass texture location to vertex shader
-    		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, skybox.GetWidth(), skybox.GetHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, skybox.GetBits());
-    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);//specify minificaton filtering
-    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);//specify magnificaton filtering
-    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);//specify texture coordinate treatment
-    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);//specify texture coordinate treatment
-    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);//specify texture coordinate treatment
+			CBitmap skybox("skybox.bmp");//read image
+    		glGenTextures(1, &m_texture);//make a texture
+    		glBindTexture(GL_TEXTURE_2D, skybox_texture);//bind the texture
+			//Add the texture data
+    		glTexImage2D(	GL_TEXTURE_2D, 
+							0, 
+							GL_RGBA, 
+							skybox.GetWidth(),//width 
+							skybox.GetHeight(),//height
+							0,//should always be 0???
+							GL_RGBA, 
+							GL_UNSIGNED_BYTE, 
+							skybox.GetBits());
+    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);//texture settings
+    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+			//glUniform1i(skybox_texture, 0);//pass texture location to vertex shader//WHY DOES THIS MAKE THE SYSTEM BREAK????
     		glBindTexture(GL_TEXTURE_2D, 0);
-			/*float skyboxVertices[] = {//positions          
+			/*float skyboxVertices[] = {          
         		-1.0f,  1.0f, -1.0f,
         		-1.0f, -1.0f, -1.0f,
          		1.0f, -1.0f, -1.0f,
@@ -471,22 +476,18 @@ class HelloGLSLApp : public GLFWApp{
         		-1.0f, -1.0f,  1.0f,
          		1.0f, -1.0f,  1.0f
     		};
-
     		glGenVertexArrays(1, &skyboxVAO);//skybox VAO
 			glBindVertexArray(skyboxVAO);
-
     		glGenBuffers(1, &skyboxVBO);
     		glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-    		
 			glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-    		glEnableVertexAttribArray(0);
-    		glVertexAttribPointer(0, 
-				3, 
-				GL_FLOAT, 
-				GL_FALSE, 
-				3 * sizeof(float), 
-				(void*)0);
-
+    		glEnableVertexAttribArray(0);//What does this mean?
+    		glVertexAttribPointer(0,//What does this mean?
+				3,//How much data to get
+				GL_FLOAT,//data type
+				GL_FALSE,//Is the data normalized?
+				3 * sizeof(float),//How much data per row
+				(void*)0);//How much data  I need to skip over
 			std::vector<std::string> faces{
         		"right.jpg",
         		"left.jpg",
@@ -495,8 +496,7 @@ class HelloGLSLApp : public GLFWApp{
         		"back.jpg",
         		"front.jpg"
     		};
-
-    		cubemapTexture = loadCubemap(faces);*/
+    		skybox_texture = loadCubemap(faces);*/
 			msglVersion();    
 			return !msglError();
 		}
@@ -612,38 +612,29 @@ class HelloGLSLApp : public GLFWApp{
 			shaderProgram_A.activate();
 			activateUniforms_A(_light0);
 
-			//XZ->draw();//Draw the grid
-			/*for(std::vector<Building*>::iterator it = buildings.begin(); it != buildings.end(); ++it){//Draw Buildings
+			XZ->draw();//Draw the plane
+			for(std::vector<Building*>::iterator it = buildings.begin(); it != buildings.end(); ++it){//Draw Buildings
 				(*it)->draw();
-			}*/
+			}
 
-        	/*glDepthFunc(GL_LEQUAL);//change depth function so depth test passes when values are equal to depth buffer's content
-			modelViewMatrix_B = glm::mat4(glm::mat3(camera.getViewMatrix()));//remove translation from the view matrix
-			projectionMatrix_B = glm::perspective(double(camera.getFovy()), ratio, 0.1, 1000.0);
-        	shaderProgram_B.activate();
-			glUniformMatrix4fv(uModelViewMatrix_B, 1, false, glm::value_ptr(modelViewMatrix_B));    
-			glUniformMatrix4fv(uProjectionMatrix_B, 1, false, glm::value_ptr(projectionMatrix_B));
-        	glBindVertexArray(skyboxVAO);//skybox cube
-        	glActiveTexture(GL_TEXTURE0);
-        	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-        	glDrawArrays(GL_TRIANGLES, 0, 36);
-        	glBindVertexArray(0);
-        	glDepthFunc(GL_LESS);//set depth function back to default*/
-			//glDepthFunc(GL_LEQUAL);
-			glUseProgram(0);
-    		glEnable(GL_TEXTURE_2D);
-    		glBindTexture(GL_TEXTURE_2D, skybox_texture);
 			modelViewMatrix_B = glm::mat4(glm::mat3(camera.getViewMatrix()));//remove translation from the view matrix
 			projectionMatrix_B = glm::perspective(double(camera.getFovy()), ratio, 0.1, 1000.0);
     		shaderProgram_B.activate();
 			glUniformMatrix4fv(uModelViewMatrix_B, 1, false, glm::value_ptr(modelViewMatrix_B));    
 			glUniformMatrix4fv(uProjectionMatrix_B, 1, false, glm::value_ptr(projectionMatrix_B));
-			//glUniform1i(skybox_texture, 0);//pass texture location to vertex shader
+        	/*glDepthFunc(GL_LEQUAL);//change depth function so depth test passes when values are equal to depth buffer's content
+        	glBindVertexArray(skyboxVAO);//skybox cube
+        	glActiveTexture(GL_TEXTURE0);
+        	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_texture);
+        	glDrawArrays(GL_TRIANGLES, 0, 36);
+        	glBindVertexArray(0);
+        	glDepthFunc(GL_LESS);//set depth function back to default*/
+    		glEnable(GL_TEXTURE_2D);
+    		glBindTexture(GL_TEXTURE_2D, skybox_texture);
     		drawSkybox();
-    		glUseProgram(0);
+    		//glUseProgram(0);
     		glDisable(GL_TEXTURE_2D);
-    		glBindTexture(GL_TEXTURE_2D, 0);
-			//glDepthFunc(GL_LESS);
+    		//glBindTexture(GL_TEXTURE_2D, 0);
 
 			if(isKeyPressed('Q')){
 				end();      
@@ -659,16 +650,28 @@ class HelloGLSLApp : public GLFWApp{
 			}else if(isKeyPressed(GLFW_KEY_DOWN)){
 				camera.moveBackwards();
 			}else if(isKeyPressed('W')){
-				camera.ascend();//camera.rotateCameraUp();
-				//light0.rotateUp();
+				camera.ascend();
 			}else if(isKeyPressed('S')){
-				camera.descend();//camera.rotateCameraDown();
-				//light0.rotateDown();
+				camera.descend();
 			}else if(isKeyPressed('A')){
-				camera.sideStepLeft();//light0.rotateLeft();
+				camera.sideStepLeft();
 			}else if(isKeyPressed('D')){
-				camera.sideStepRight();//light0.rotateRight();
-			}
+				camera.sideStepRight();
+			}else if(isKeyPressed('X')){
+      			camera.rotateCameraUp();
+    		}else if(isKeyPressed('Y')){
+      			camera.rotateCameraDown();
+    		}else if(isKeyPressed('H')){
+      			light0.rotateUp();
+    		}else if(isKeyPressed('G')){
+      			light0.rotateDown();
+    		}else if(isKeyPressed('J')){
+      			light0.rotateLeft();
+    		}else if(isKeyPressed('N')){
+      			light0.rotateRight();
+    		}else if(isKeyPressed('1')){
+    		}else if(isKeyPressed('2')){
+    		}
 			return !msglError();
 		}   
 };
