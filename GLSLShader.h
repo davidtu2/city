@@ -230,6 +230,7 @@ public:
       fprintf( stderr, "Can't generate program name\n" );
       exit(1);
     }
+	
     _texture = NULL;
   }
 

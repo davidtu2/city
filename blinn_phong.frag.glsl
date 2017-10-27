@@ -12,6 +12,7 @@ uniform vec4 light0_position;
 uniform vec4 light0_color;
 uniform vec4 light1_position;
 uniform vec4 light1_color;
+//uniform sampler2D color_texture;
 
 vec4 ComputeLight (const in vec3 direction, const in vec4 lightcolor, const in vec3 normal, const in vec3 halfvec, const in vec4 mydiffuse, const in vec4 myspecular, const in float myshininess){
 
@@ -47,13 +48,14 @@ void main (void){
   vec3 position0 = light0_position.xyz / light0_position.w;
   vec3 direction0 = normalize (position0 - mypos);
   vec3 half0 = normalize(direction0 + eyedirn); 
-  vec4 color0 = ComputeLight(direction0, light0_color, normal, half0, diffuse, specular, shininess) ;
+  vec4 color0 = ComputeLight(direction0, light0_color, normal, half0, diffuse, specular, shininess);
 
   // Light 1, point 
   vec3 position1 = light1_position.xyz / light1_position.w;
   vec3 direction1 = normalize(position1 - mypos);
   vec3 half1 = normalize(direction1 + eyedirn); 
-  vec4 color1 = ComputeLight(direction1, light1_color, normal, half1, diffuse, specular, shininess) ;
-    
+  vec4 color1 = ComputeLight(direction1, light1_color, normal, half1, diffuse, specular, shininess);
+
   gl_FragColor = ambient + color0 + color1;
+  //gl_FragColor = ambient + color0 + color1 + texture2D(color_texture, gl_TexCoord[0].st;
 }

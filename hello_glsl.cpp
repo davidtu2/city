@@ -7,9 +7,9 @@
 #include "GLFWApp.h"
 #include "GLSLShader.h"
 #include <vector>
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"//For textures
-#include "bitmap.h"
+#define STB_IMAGE_IMPLEMENTATION//For textures
+#include "stb_image.h"
+//#include "bitmap.h"
 
 void msglVersion(void){
 	fprintf(stderr, "OpenGL Version Information:\n");
@@ -308,17 +308,17 @@ class HelloGLSLApp : public GLFWApp{
 		unsigned int uNormalMatrix_A;
 		unsigned int uLight0_position_A;
 		unsigned int uLight0_color_A;
-
+		
 		GLSLProgram shaderProgram_B;
 		unsigned int uModelViewMatrix_B;
 		unsigned int uProjectionMatrix_B;
 		glm::mat4 modelViewMatrix_B;
-		glm::mat4 projectionMatrix_B;
+		//glm::mat4 projectionMatrix_B;
 		unsigned int skybox_texture;
-		unsigned int m_texture;
+		//unsigned int m_texture;
 		unsigned int skyboxVAO;
 		unsigned int skyboxVBO;
-  
+
 	public:
 		HelloGLSLApp(int argc, char* argv[]):GLFWApp(argc, argv, std::string("City").c_str(), 600, 600){
 
@@ -337,26 +337,39 @@ class HelloGLSLApp : public GLFWApp{
 
 		unsigned int loadCubemap(std::vector<std::string> faces){
     		unsigned int textureID;
-    		glGenTextures(1, &textureID);
-    		glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+    		glGenTextures(1, &textureID);//Create a texture
+    		glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);//Bind the texture
 
-    		int width, height, nrChannels;
+    		int width;
+			int height;
+			int nrChannels;//Corresponds to rgba
     		for (unsigned int i = 0; i < faces.size(); i++){
         		unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
-        		if (data){
+        		if (data){//Adding by i because OpenGL's enums is linearly incremented. It will go through:
+					//GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+					//GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z and GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
+            		glTexImage2D(	GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,//Fill the texture by uploading the image. This needs to be done 6 times for each face
+									0, 
+									GL_RGB,//Indicates that the data has 4 components: rgba
+									width, 
+									height, 
+									0, 
+									GL_RGB,////How components are represented in RAM
+									GL_UNSIGNED_BYTE, 
+									data);
+            		stbi_image_free(data);
 					printf("Texture successfully loaded.\n");
-            		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-            		stbi_image_free(data);
         		}else{
-					printf("Cubemap texture failed to load.\n");
             		stbi_image_free(data);
+					printf("Cubemap texture failed to load.\n");
         		}
-    		}
-    		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    		}//Configure the texture with texture settings:
+    		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);//Bi-linear filtering is used to clean up any minor aliasing when the camera rotates.
     		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+			//Texture coordinates that are exactly between two faces might not hit an exact face (due to some hardware limitations)
+    		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);//so by using GL_CLAMP_TO_EDGE, OpenGL always return their edge values whenever we sample between faces.
+    		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);//Specify how to wrap each texture coordinate
+    		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);//If you don't clamp to edge then you might get a visible seam on the edges of your textures
     		return textureID;
 		}
 
@@ -381,8 +394,8 @@ class HelloGLSLApp : public GLFWApp{
 				exit(1);
 			}
 
-			const char* vertexShaderSource_B = "skybox.vert.glsl";//Load shader program B
-			const char* fragmentShaderSource_B = "skybox.frag.glsl";
+			const char* vertexShaderSource_B = "skybox2.vert.glsl";//Load shader program B
+			const char* fragmentShaderSource_B = "skybox2.frag.glsl";
 			FragmentShader fragmentShader_B(fragmentShaderSource_B);
 			VertexShader vertexShader_B(vertexShaderSource_B);
 			shaderProgram_B.attach(vertexShader_B);
@@ -403,37 +416,36 @@ class HelloGLSLApp : public GLFWApp{
 			uLight0_position_A = glGetUniformLocation(shaderProgram_A.id(), "light0_position");
 			uLight0_color_A = glGetUniformLocation(shaderProgram_A.id(), "light0_color");
 
-			uModelViewMatrix_B = glGetUniformLocation(shaderProgram_B.id(), "modelViewMatrix");
-			uProjectionMatrix_B = glGetUniformLocation(shaderProgram_B.id(), "projectionMatrix");
-
+			uModelViewMatrix_B = glGetUniformLocation(shaderProgram_B.id(), "modelViewMatrix_B");
+			uProjectionMatrix_B = glGetUniformLocation(shaderProgram_B.id(), "projectionMatrix_B");
+			
 			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 			glEnable(GL_DEPTH_TEST);
 			glDepthFunc(GL_LESS);
 
-			drawXZPlane();
-			drawBuildings();
-
-			CBitmap skybox("skybox.bmp");//read image
-    		glGenTextures(1, &m_texture);//make a texture
-    		glBindTexture(GL_TEXTURE_2D, skybox_texture);//bind the texture
-			//Add the texture data
-    		glTexImage2D(	GL_TEXTURE_2D, 
+			/*CBitmap skybox("skybox.bmp");//Read image
+    		glGenTextures(1, &skybox_texture);//Create a texture
+    		glBindTexture(GL_TEXTURE_2D, skybox_texture);//Bind the texture
+    		glTexImage2D(	GL_TEXTURE_2D,//Fill the texture by uploading the image
 							0, 
-							GL_RGBA, 
-							skybox.GetWidth(),//width 
-							skybox.GetHeight(),//height
+							GL_RGBA,//Indicates that the data has 4 components: rgba
+							skybox.GetWidth(),//Width 
+							skybox.GetHeight(),//Height
 							0,//should always be 0???
-							GL_RGBA, 
+							GL_RGBA,//How the components are represented in RAM
 							GL_UNSIGNED_BYTE, 
-							skybox.GetBits());
-    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);//texture settings
-    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+							skybox.GetBits());//The data itself
+    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);//Configure the texture with texture settings:
+    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);//Bi-linear filtering is used to clean up any minor aliasing when the camera rotates.
+			//Texture coordinates that are exactly between two faces might not hit an exact face (due to some hardware limitations)
+			//so by using GL_CLAMP_TO_EDGE, OpenGL always return their edge values whenever we sample between faces.
+    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);//Specify how to wrap each texture coordinate
+    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);//If you don't clamp to edge then you might get a visible seam on the edges of your textures
     		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 			//glUniform1i(skybox_texture, 0);//pass texture location to vertex shader//WHY DOES THIS MAKE THE SYSTEM BREAK????
-    		glBindTexture(GL_TEXTURE_2D, 0);
-			/*float skyboxVertices[] = {          
+    		glBindTexture(GL_TEXTURE_2D, 0);*/
+
+			float skyboxVertices[] = {          
         		-1.0f,  1.0f, -1.0f,
         		-1.0f, -1.0f, -1.0f,
          		1.0f, -1.0f, -1.0f,
@@ -480,7 +492,10 @@ class HelloGLSLApp : public GLFWApp{
 			glBindVertexArray(skyboxVAO);
     		glGenBuffers(1, &skyboxVBO);
     		glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+			glBufferData(	GL_ARRAY_BUFFER, 
+							sizeof(skyboxVertices), 
+							&skyboxVertices, 
+							GL_STATIC_DRAW);
     		glEnableVertexAttribArray(0);//What does this mean?
     		glVertexAttribPointer(0,//What does this mean?
 				3,//How much data to get
@@ -496,7 +511,11 @@ class HelloGLSLApp : public GLFWApp{
         		"back.jpg",
         		"front.jpg"
     		};
-    		skybox_texture = loadCubemap(faces);*/
+    		skybox_texture = loadCubemap(faces);
+
+			drawXZPlane();
+			drawBuildings();
+
 			msglVersion();    
 			return !msglError();
 		}
@@ -617,30 +636,34 @@ class HelloGLSLApp : public GLFWApp{
 				(*it)->draw();
 			}
 
-			modelViewMatrix_B = glm::mat4(glm::mat3(camera.getViewMatrix()));//remove translation from the view matrix
-			projectionMatrix_B = glm::perspective(double(camera.getFovy()), ratio, 0.1, 1000.0);
-    		shaderProgram_B.activate();
-			glUniformMatrix4fv(uModelViewMatrix_B, 1, false, glm::value_ptr(modelViewMatrix_B));    
-			glUniformMatrix4fv(uProjectionMatrix_B, 1, false, glm::value_ptr(projectionMatrix_B));
-        	/*glDepthFunc(GL_LEQUAL);//change depth function so depth test passes when values are equal to depth buffer's content
+			shaderProgram_B.activate();
+			modelViewMatrix_B = glm::mat4(glm::mat3(camera.getViewMatrix()));//Remove translation from the view matrix so that the skybox won't translate
+			//projectionMatrix_B = glm::perspective(double(camera.getFovy()), ratio, 0.1, 1000.0);
+			glUniformMatrix4fv(uModelViewMatrix_B, 1, false, glm::value_ptr(modelViewMatrix_B));
+			//glUniformMatrix4fv(uModelViewMatrix_B, 1, false, glm::value_ptr(modelViewMatrix));
+			glUniformMatrix4fv(uProjectionMatrix_B, 1, false, glm::value_ptr(projectionMatrix));//Projection matricies are the same for the skybox and the city
+
+        	glDepthFunc(GL_LEQUAL);//change depth function so depth test passes when values are equal to depth buffer's content
         	glBindVertexArray(skyboxVAO);//skybox cube
         	glActiveTexture(GL_TEXTURE0);
         	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_texture);
         	glDrawArrays(GL_TRIANGLES, 0, 36);
         	glBindVertexArray(0);
-        	glDepthFunc(GL_LESS);//set depth function back to default*/
-    		glEnable(GL_TEXTURE_2D);
+        	glDepthFunc(GL_LESS);//set depth function back to default
+
+			/*glEnable(GL_TEXTURE_2D);
     		glBindTexture(GL_TEXTURE_2D, skybox_texture);
     		drawSkybox();
     		//glUseProgram(0);
     		glDisable(GL_TEXTURE_2D);
-    		//glBindTexture(GL_TEXTURE_2D, 0);
+    		glBindTexture(GL_TEXTURE_2D, 0);*/
 
 			if(isKeyPressed('Q')){
 				end();      
 			}else if(isKeyPressed('R')){
-				initLights();  
-				printf("Lights reinitialized.\n");
+				initLights();
+				initCamera();
+				printf("Lights and camera reinitialized.\n");
 			}else if(isKeyPressed(GLFW_KEY_LEFT)){
 				camera.panCameraLeft();
 			}else if(isKeyPressed(GLFW_KEY_RIGHT)){
@@ -669,8 +692,6 @@ class HelloGLSLApp : public GLFWApp{
       			light0.rotateLeft();
     		}else if(isKeyPressed('N')){
       			light0.rotateRight();
-    		}else if(isKeyPressed('1')){
-    		}else if(isKeyPressed('2')){
     		}
 			return !msglError();
 		}   

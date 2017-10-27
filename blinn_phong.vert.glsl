@@ -12,4 +12,5 @@ void main() {
   gl_Position = projectionMatrix * modelViewMatrix * gl_Vertex;
   myNormal = gl_Normal;
   myVertex = gl_Vertex;
+  //gl_TexCoord[0] = gl_MultiTexCoord0;
 }
