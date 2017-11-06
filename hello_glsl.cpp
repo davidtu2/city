@@ -7,9 +7,10 @@
 #include "GLFWApp.h"
 #include "GLSLShader.h"
 #include <vector>
-#define STB_IMAGE_IMPLEMENTATION//For textures
+//For textures - By defining this, the preprocessor modifies the header file so that it only contains the relevant sc, turning the header file into a .cpp file
+#define STB_IMAGE_IMPLEMENTATION
+//Our Image loading library
 #include "stb_image.h"
-//#include "bitmap.h"
 
 void msglVersion(void){
 	fprintf(stderr, "OpenGL Version Information:\n");
@@ -21,9 +22,7 @@ void msglVersion(void){
 
 class SpinningLight{
 	public:
-		SpinningLight(){
-		
-		}
+		SpinningLight(){}
 
 		SpinningLight(glm::vec3& color, glm::vec3& position, glm::vec3& center):_rotationDelta(0.01), _color(color), _position(position), _center(center), _savedColor(color), _isOn(true){
 			glm::vec3 d = direction();//Get the vector from the light to the center of the world
@@ -199,9 +198,7 @@ class Camera{
 
 class Plane{
 	public:
-		Plane(int size):_size(size){
-
-		}
+		Plane(int size):_size(size){}
 
 		virtual ~Plane(){
 			printf("Calling Plane destructor.\n");
@@ -240,46 +237,82 @@ class Plane{
 
 class Building{
 	public:
-		Building(float x, float y, float z, float size, float height):_x(x), _y(y), _z(z), _size(size), _height(height){
-
-		}
+		Building(float x, float y, float z, float size, float height):_x(x), _y(y), _z(z), _size(size), _height(height){}
         
 		virtual ~Building(){
 			printf("Calling Building destructor.\n");
 		}
         
 		void draw(){
+			int factor = 1;
 			glBegin(GL_QUADS);//Start drawing quads
-			glNormal3f(0.0, 0.0, 1.0);//Facing towards me -> Front facing
-			glColor4f(1.0f, 0.0f, 0.0f, 1.0f);//Random coloring?????
+			
+			glTexCoord2f(0, factor);//Facing towards me -> Front facing
+			glNormal3f(0.0, 0.0, 1.0);
+			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(-_size + _x, _height + _y,  _size + _z);//Top left
+			glTexCoord2f(0, 0);
+			//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(-_size + _x, _y,  _size + _z);//Bottom left
+			glTexCoord2f(factor, 0);
+			//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(_size + _x, _y,  _size + _z);//Bottom right
+			glTexCoord2f(factor, factor);
+			//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(_size + _x, _height + _y,  _size + _z);//Top right
-			glNormal3f(1.0, 0.0, 0.0);//Right facing
-			glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
+
+			glTexCoord2f(0, factor);//Right facing
+			glNormal3f(1.0, 0.0, 0.0);
+			//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(_size + _x, _height + _y,  _size + _z);//Top left
+			glTexCoord2f(0, 0);
+			//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(_size + _x, _y,  _size + _z);//Bottom left
+			glTexCoord2f(factor, 0);
+			//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(_size + _x, _y,  -_size + _z);//Bottom right
+			glTexCoord2f(factor, factor);
+			//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(_size + _x, _height + _y,  -_size + _z);//Top right
-			glNormal3f(-1.0, 0.0, 0.0);//Left facing
-			glColor4f( 0.4f, 0.4f, 0.4f, 1.0f);
+
+			glTexCoord2f(0, factor);//Left facing
+			glNormal3f(-1.0, 0.0, 0.0);
+			//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(-_size + _x, _height + _y,  -_size + _z);//Top left
+			glTexCoord2f(0, 0);
+			//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(-_size + _x, _y,  -_size + _z);//Bottom left
+			glTexCoord2f(factor, 0);
+			//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(-_size + _x, _y,  _size + _z);//Bottom right
+			glTexCoord2f(factor, factor);
+			//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(-_size + _x, _height + _y,  _size + _z);//Top right
-			glNormal3f(0.0, 0.0, -1.0);//Facing away from me -> Rear facing
-			glColor4f( 0.3f, 0.3f, 0.3f, 1.0f);
+
+			glTexCoord2f(0, factor);//Facing away from me -> Rear facing
+			glNormal3f(0.0, 0.0, -1.0);
+			//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(-_size + _x, _y,  -_size + _z);//Bottom left
+			glTexCoord2f(0, 0);
+			//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(-_size + _x, _height + _y,  -_size + _z);//Top left
+			glTexCoord2f(factor, 0);
+			//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(_size + _x, _height + _y,  -_size + _z);//Top right
+			glTexCoord2f(factor, factor);
+			//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(_size + _x, _y,  -_size + _z);//Bottom right
+
 			glNormal3f(0.0, 1.0, 0.0);//Facing straight up -> Top facing
-			glColor4f( 0.6f, 0.6f, 0.6f, 1.0f);
+			//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(-_size + _x, _height + _y,  -_size + _z);//Top left
+			//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(-_size + _x, _height + _y,  _size + _z);//Bottom left
+			//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(_size + _x, _height + _y,  _size + _z);//Bottom right
+			//glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(_size + _x, _height + _y,  -_size + _z);//Top right
+
 			glEnd();//Not going to draw the bottom of the building
 		}
 
@@ -308,37 +341,34 @@ class HelloGLSLApp : public GLFWApp{
 		unsigned int uNormalMatrix_A;
 		unsigned int uLight0_position_A;
 		unsigned int uLight0_color_A;
-		
+
 		GLSLProgram shaderProgram_B;
 		unsigned int uModelViewMatrix_B;
 		unsigned int uProjectionMatrix_B;
 		glm::mat4 modelViewMatrix_B;
-		//glm::mat4 projectionMatrix_B;
 		unsigned int skybox_texture;
-		//unsigned int m_texture;
+		unsigned int building_texture;
 		unsigned int skyboxVAO;
 		unsigned int skyboxVBO;
 
 	public:
-		HelloGLSLApp(int argc, char* argv[]):GLFWApp(argc, argv, std::string("City").c_str(), 600, 600){
-
-		}
+		HelloGLSLApp(int argc, char* argv[]):GLFWApp(argc, argv, std::string("City").c_str(), 600, 600){}
 
 		void initCamera(){
 			camera = Camera(glm::vec3(0.0f, 0.0f, 3.0f));//Let's set the camera in this position
 		}
    
 		void initLights(){
-			glm::vec3 color0(0.0, 0.0, 1.0);
-			glm::vec3 position0(0.0, 5.0, 10.0);
+			glm::vec3 color0(1.0, 1.0, 1.0);
+			glm::vec3 position0(0.0, 30.0, 50.0);
 			glm::vec3 centerPosition(0.0, 0.0, 0.0);
 			light0 = SpinningLight(color0, position0, centerPosition);
 		}
 
-		unsigned int loadCubemap(std::vector<std::string> faces){
+		unsigned int initCubemap(std::vector<std::string> faces){
     		unsigned int textureID;
-    		glGenTextures(1, &textureID);//Create a texture
-    		glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);//Bind the texture
+    		glGenTextures(1, &textureID);//Create 1 texture that are of type unsigned int, as indicated by the textureID type
+    		glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);//Bind the texture so that any texture commands called after apply to this texture
 
     		int width;
 			int height;
@@ -348,17 +378,17 @@ class HelloGLSLApp : public GLFWApp{
         		if (data){//Adding by i because OpenGL's enums is linearly incremented. It will go through:
 					//GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
 					//GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z and GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
-            		glTexImage2D(	GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,//Fill the texture by uploading the image. This needs to be done 6 times for each face
-									0, 
-									GL_RGB,//Indicates that the data has 4 components: rgba
+            		glTexImage2D(	GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,//Generate the texture by using the uploaded data. This needs to be done 6 times for each face
+									0,//Specifies the mipmap level
+									GL_RGB,//How to store the texture: rgba
 									width, 
 									height, 
-									0, 
-									GL_RGB,////How components are represented in RAM
-									GL_UNSIGNED_BYTE, 
-									data);
+									0,//Specifies border size
+									GL_RGB,//The format of the data: rgb
+									GL_UNSIGNED_BYTE,//The datatype of the data
+									data);//The data itself
+					//glGenerateMipmap(GL_TEXTURE_2D);//OpenGL can generate mipmaps afterwards
             		stbi_image_free(data);
-					printf("Texture successfully loaded.\n");
         		}else{
             		stbi_image_free(data);
 					printf("Cubemap texture failed to load.\n");
@@ -378,8 +408,8 @@ class HelloGLSLApp : public GLFWApp{
 			initCamera();
 			initLights();
 
-			const char* vertexShaderSource_A = "lighting.vert.glsl";//Load shader program A
-			const char* fragmentShaderSource_A = "lighting.frag.glsl";
+			const char* vertexShaderSource_A = "blinn_phong.vert.glsl";//Load shader program A
+			const char* fragmentShaderSource_A = "blinn_phong.frag.glsl";
 			FragmentShader fragmentShader_A(fragmentShaderSource_A);
 			VertexShader vertexShader_A(vertexShaderSource_A);
 			shaderProgram_A.attach(vertexShader_A);
@@ -422,28 +452,6 @@ class HelloGLSLApp : public GLFWApp{
 			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 			glEnable(GL_DEPTH_TEST);
 			glDepthFunc(GL_LESS);
-
-			/*CBitmap skybox("skybox.bmp");//Read image
-    		glGenTextures(1, &skybox_texture);//Create a texture
-    		glBindTexture(GL_TEXTURE_2D, skybox_texture);//Bind the texture
-    		glTexImage2D(	GL_TEXTURE_2D,//Fill the texture by uploading the image
-							0, 
-							GL_RGBA,//Indicates that the data has 4 components: rgba
-							skybox.GetWidth(),//Width 
-							skybox.GetHeight(),//Height
-							0,//should always be 0???
-							GL_RGBA,//How the components are represented in RAM
-							GL_UNSIGNED_BYTE, 
-							skybox.GetBits());//The data itself
-    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);//Configure the texture with texture settings:
-    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);//Bi-linear filtering is used to clean up any minor aliasing when the camera rotates.
-			//Texture coordinates that are exactly between two faces might not hit an exact face (due to some hardware limitations)
-			//so by using GL_CLAMP_TO_EDGE, OpenGL always return their edge values whenever we sample between faces.
-    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);//Specify how to wrap each texture coordinate
-    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);//If you don't clamp to edge then you might get a visible seam on the edges of your textures
-    		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-			//glUniform1i(skybox_texture, 0);//pass texture location to vertex shader//WHY DOES THIS MAKE THE SYSTEM BREAK????
-    		glBindTexture(GL_TEXTURE_2D, 0);*/
 
 			float skyboxVertices[] = {          
         		-1.0f,  1.0f, -1.0f,
@@ -488,11 +496,12 @@ class HelloGLSLApp : public GLFWApp{
         		-1.0f, -1.0f,  1.0f,
          		1.0f, -1.0f,  1.0f
     		};
-    		glGenVertexArrays(1, &skyboxVAO);//skybox VAO
-			glBindVertexArray(skyboxVAO);
-    		glGenBuffers(1, &skyboxVBO);
-    		glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-			glBufferData(	GL_ARRAY_BUFFER, 
+
+    		glGenVertexArrays(1, &skyboxVAO);//Create 1 VAO
+			glBindVertexArray(skyboxVAO);//Then bind it
+    		glGenBuffers(1, &skyboxVBO);//Create 1 VBO
+    		glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);//Then bind that
+			glBufferData(	GL_ARRAY_BUFFER,//Fill the VBO with the data
 							sizeof(skyboxVertices), 
 							&skyboxVertices, 
 							GL_STATIC_DRAW);
@@ -503,6 +512,7 @@ class HelloGLSLApp : public GLFWApp{
 				GL_FALSE,//Is the data normalized?
 				3 * sizeof(float),//How much data per row
 				(void*)0);//How much data  I need to skip over
+
 			std::vector<std::string> faces{
         		"right.jpg",
         		"left.jpg",
@@ -511,10 +521,38 @@ class HelloGLSLApp : public GLFWApp{
         		"back.jpg",
         		"front.jpg"
     		};
-    		skybox_texture = loadCubemap(faces);
+    		skybox_texture = initCubemap(faces);
 
-			drawXZPlane();
-			drawBuildings();
+			//glEnable(GL_TEXTURE_2D);
+			glGenTextures(1, &building_texture);
+			glBindTexture(GL_TEXTURE_2D, building_texture);
+			int width;
+			int height;
+			int nrChannels;
+			unsigned char* data = stbi_load("container.jpg", &width, &height, &nrChannels, 0);
+        	if (data){
+				glTexImage2D(	GL_TEXTURE_2D,//Generate the texture by using the uploaded data. This needs to be done 6 times for each face
+								0,//Specifies the mipmap level
+								GL_RGB,//How to store the texture: rgba
+								width, 
+								height, 
+								0,
+								GL_RGB,//The format of the data: rgb
+								GL_UNSIGNED_BYTE,//The datatype of the data
+								data);//The data itself
+           		stbi_image_free(data);
+       		}else{
+           		stbi_image_free(data);
+				printf("Cubemap texture failed to load.\n");
+       		}
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			//glBindTexture(GL_TEXTURE_2D, 0);
+
+			initXZPlane();
+			initBuildings();
 
 			msglVersion();    
 			return !msglError();
@@ -536,11 +574,11 @@ class HelloGLSLApp : public GLFWApp{
 			glUniform4fv(uLight0_color_A, 1, glm::value_ptr(light0.color()));
 		}
 
-		void drawXZPlane(){//X axis is 0 to positive values. Z axis is 0 to negative values. RGBA values are for the boundary lines
+		void initXZPlane(){//X axis is 0 to positive values. Z axis is 0 to negative values. RGBA values are for the boundary lines
 			XZ = new Plane(planeSize);
 		}
 
-		void drawBuildings(){//Procedural generation
+		void initBuildings(){//Procedural generation
 			for(int j = -2; j > -planeSize - 6; j -= 6){
 				for(int i = 0; i < planeSize + 6; i += 2){//101 iterations. This is the x value
 					if(i % 12 != 10 && i % 12 != 0){//x value = {2, 4, 6, 8}
@@ -556,59 +594,6 @@ class HelloGLSLApp : public GLFWApp{
 					}
 				}
 			}
-		}
-
-		void drawSkybox() {
-     		glBegin(GL_QUADS);//Back
-     		glTexCoord2f(.5,1.0/3.0);
-     		glVertex3f(500,-500,-500);
-     		glTexCoord2f(.5,2.0/3.0);
-     		glVertex3f(500,500,-500);
-     		glTexCoord2f(.25,2.0/3.0);
-     		glVertex3f(-500,500,-500);
-     		glTexCoord2f(.25,1.0/3.0);
-     		glVertex3f(-500,-500,-500);
-     		glTexCoord2f(1,0.334);//Front
-     		glVertex3f(-500,-500,500);
-     		glTexCoord2f(1,0.665);
-     		glVertex3f(-500,500,500);
-     		glTexCoord2f(.75,0.665);
-     		glVertex3f(500,500,500);
-     		glTexCoord2f(.75,0.334);
-     		glVertex3f(500,-500,500);
-     		glTexCoord2f(0,0.334);//Left
-     		glVertex3f(-500,-500,500);
-     		glTexCoord2f(.25,0.334);
-     		glVertex3f(-500,-500,-500);
-     		glTexCoord2f(.25,0.665);
-     		glVertex3f(-500,500,-500);
-     		glTexCoord2f(0,0.665);
-     		glVertex3f(-500,500,500);
-     		glTexCoord2f(.5,0.334);//Right
-     		glVertex3f(500,-500,-500);
-     		glTexCoord2f(.75,0.334);
-     		glVertex3f(500,-500,500);
-     		glTexCoord2f(.75,0.665);
-     		glVertex3f(500,500,500);
-     		glTexCoord2f(.5,0.665);
-     		glVertex3f(500,500,-500);
-     		glTexCoord2f(.251,2.0/3.0);//Top
-     		glVertex3f(-500,500,-500);
-     		glTexCoord2f(.499,2.0/3.0);
-     		glVertex3f(500,500,-500);
-     		glTexCoord2f(.499,1.0);
-     		glVertex3f(500,500,500);
-     		glTexCoord2f(.251,1.0);
-     		glVertex3f(-500,500,500);
-     		glTexCoord2f(.251,1.0/3.0);//Bottom
-     		glVertex3f(-500,-500,-500);
-     		glTexCoord2f(.251,0.0/3.0);
-     		glVertex3f(-500,-500,500);
-     		glTexCoord2f(.499,0.0/3.0);
-     		glVertex3f(500,-500,500);
-     		glTexCoord2f(.499,1.0/3.0);
-     		glVertex3f(500,-500,-500);
-     		glEnd();
 		}
 
 		bool render(){
@@ -633,30 +618,27 @@ class HelloGLSLApp : public GLFWApp{
 
 			XZ->draw();//Draw the plane
 			for(std::vector<Building*>::iterator it = buildings.begin(); it != buildings.end(); ++it){//Draw Buildings
-				(*it)->draw();
+				glEnable(GL_TEXTURE_2D);
+        		glBindTexture(GL_TEXTURE_2D, building_texture);
+        		(*it)->draw();
+        		glDisable(GL_TEXTURE_2D);
+        		glBindTexture(GL_TEXTURE_2D, 0);
 			}
 
 			shaderProgram_B.activate();
 			modelViewMatrix_B = glm::mat4(glm::mat3(camera.getViewMatrix()));//Remove translation from the view matrix so that the skybox won't translate
-			//projectionMatrix_B = glm::perspective(double(camera.getFovy()), ratio, 0.1, 1000.0);
 			glUniformMatrix4fv(uModelViewMatrix_B, 1, false, glm::value_ptr(modelViewMatrix_B));
-			//glUniformMatrix4fv(uModelViewMatrix_B, 1, false, glm::value_ptr(modelViewMatrix));
 			glUniformMatrix4fv(uProjectionMatrix_B, 1, false, glm::value_ptr(projectionMatrix));//Projection matricies are the same for the skybox and the city
+			//glUniform1i(uSkybox_B, 0);//Makes sure each uniform sampler associates with the correct texture unit
 
         	glDepthFunc(GL_LEQUAL);//change depth function so depth test passes when values are equal to depth buffer's content
         	glBindVertexArray(skyboxVAO);//skybox cube
-        	glActiveTexture(GL_TEXTURE0);
+        	//glActiveTexture(GL_TEXTURE0);//Activate the texture unit first before binding. This allows us to use multiple textures. If this is not called, the default will be: GL_TEXTURE0
+			//bind the texture before drawing to the texture unit specified earlier. This also makes it available in the fragment shader as a sampler uniform
         	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_texture);
         	glDrawArrays(GL_TRIANGLES, 0, 36);
         	glBindVertexArray(0);
         	glDepthFunc(GL_LESS);//set depth function back to default
-
-			/*glEnable(GL_TEXTURE_2D);
-    		glBindTexture(GL_TEXTURE_2D, skybox_texture);
-    		drawSkybox();
-    		//glUseProgram(0);
-    		glDisable(GL_TEXTURE_2D);
-    		glBindTexture(GL_TEXTURE_2D, 0);*/
 
 			if(isKeyPressed('Q')){
 				end();      

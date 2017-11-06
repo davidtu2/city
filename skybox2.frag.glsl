@@ -1,5 +1,5 @@
 # version 120
-uniform samplerCube skybox;//Used to sample my texels (Used to let the program know which shader to access)
+uniform samplerCube skybox;//built-in data for texture
 
 varying vec3 TexCoords;
 

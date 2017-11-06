@@ -1,5 +1,5 @@
 # version 120
-//These are passed in from the CPU program, camera_control_*.cpp
+//These are passed in from the CPU program
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
 
@@ -12,5 +12,5 @@ void main() {
   gl_Position = projectionMatrix * modelViewMatrix * gl_Vertex;
   myNormal = gl_Normal;
   myVertex = gl_Vertex;
-  //gl_TexCoord[0] = gl_MultiTexCoord0;
+  gl_TexCoord[0] = gl_MultiTexCoord0;
 }
