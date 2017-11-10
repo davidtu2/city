@@ -23,9 +23,9 @@ $(error "Platform '$(SYSTEM)' not supported")
 endif
 
 
-TARGET = hello_glsl
+TARGET = hello_city
 # C++ Files
-CXXFILES =   hello_glsl.cpp glut_teapot.cpp
+CXXFILES =   hello_city.cpp
 CFILES =  
 # Headers
 HEADERS =  GLFWApp.h GLSLShader.h glut_teapot.h

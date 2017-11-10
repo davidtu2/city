@@ -198,55 +198,56 @@ class Camera{
 
 class Building{
 	public:
-		Building(float x, float y, float z, float size, float height):_x(x), _y(y), _z(z), _size(size), _height(height), _noWindowsPerRow(2){}
+		Building(float x, float y, float z, float size, float height, unsigned int texture):_x(x), _y(y), _z(z), _size(size), _height(height), _texture(texture), _noWindowsPerRow(1){}
         
 		virtual ~Building(){
 			printf("Calling Building destructor.\n");
 		}
         
-		void draw(unsigned int selectedTexture){
+		void draw(){
 			glEnable(GL_TEXTURE_2D);
-        	glBindTexture(GL_TEXTURE_2D, selectedTexture);
+			glActiveTexture(GL_TEXTURE0);
+        	glBindTexture(GL_TEXTURE_2D, _texture);
 			glBegin(GL_QUADS);//Start drawing quads
-			glTexCoord2f(0, _noWindowsPerRow);//Facing towards me -> Front facing
+			glTexCoord2f(0, 0);//Facing towards me -> Front facing
 			glNormal3f(0.0, 0.0, 1.0);
 			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glVertex3f(-_size + _x, _height + _y,  _size + _z);//Top left
-			glTexCoord2f(0, 0);
+			glTexCoord2f(0, _noWindowsPerRow);
 			glVertex3f(-_size + _x, _y,  _size + _z);//Bottom left
-			glTexCoord2f(_noWindowsPerRow, 0);
-			glVertex3f(_size + _x, _y,  _size + _z);//Bottom right
 			glTexCoord2f(_noWindowsPerRow, _noWindowsPerRow);
+			glVertex3f(_size + _x, _y,  _size + _z);//Bottom right
+			glTexCoord2f(_noWindowsPerRow, 0);
 			glVertex3f(_size + _x, _height + _y,  _size + _z);//Top right
 
-			glTexCoord2f(0, _noWindowsPerRow);//Right facing
+			glTexCoord2f(0, 0);//Right facing
 			glNormal3f(1.0, 0.0, 0.0);
 			glVertex3f(_size + _x, _height + _y,  _size + _z);//Top left
-			glTexCoord2f(0, 0);
+			glTexCoord2f(0, _noWindowsPerRow);
 			glVertex3f(_size + _x, _y,  _size + _z);//Bottom left
-			glTexCoord2f(_noWindowsPerRow, 0);
-			glVertex3f(_size + _x, _y,  -_size + _z);//Bottom right
 			glTexCoord2f(_noWindowsPerRow, _noWindowsPerRow);
+			glVertex3f(_size + _x, _y,  -_size + _z);//Bottom right
+			glTexCoord2f(_noWindowsPerRow, 0);
 			glVertex3f(_size + _x, _height + _y,  -_size + _z);//Top right
 
-			glTexCoord2f(0, _noWindowsPerRow);//Left facing
+			glTexCoord2f(0, 0);//Left facing
 			glNormal3f(-1.0, 0.0, 0.0);
 			glVertex3f(-_size + _x, _height + _y,  -_size + _z);//Top left
-			glTexCoord2f(0, 0);
+			glTexCoord2f(0, _noWindowsPerRow);
 			glVertex3f(-_size + _x, _y,  -_size + _z);//Bottom left
-			glTexCoord2f(_noWindowsPerRow, 0);
-			glVertex3f(-_size + _x, _y,  _size + _z);//Bottom right
 			glTexCoord2f(_noWindowsPerRow, _noWindowsPerRow);
+			glVertex3f(-_size + _x, _y,  _size + _z);//Bottom right
+			glTexCoord2f(_noWindowsPerRow, 0);
 			glVertex3f(-_size + _x, _height + _y,  _size + _z);//Top right
 
-			glTexCoord2f(0, _noWindowsPerRow);//Facing away from me -> Rear facing
+			glTexCoord2f(0, 0);//Facing away from me -> Rear facing
 			glNormal3f(0.0, 0.0, -1.0);
 			glVertex3f(-_size + _x, _y,  -_size + _z);//Bottom left
-			glTexCoord2f(0, 0);
+			glTexCoord2f(0, _noWindowsPerRow);
 			glVertex3f(-_size + _x, _height + _y,  -_size + _z);//Top left
-			glTexCoord2f(_noWindowsPerRow, 0);
-			glVertex3f(_size + _x, _height + _y,  -_size + _z);//Top right
 			glTexCoord2f(_noWindowsPerRow, _noWindowsPerRow);
+			glVertex3f(_size + _x, _height + _y,  -_size + _z);//Top right
+			glTexCoord2f(_noWindowsPerRow, 0);
 			glVertex3f(_size + _x, _y,  -_size + _z);//Bottom right
 
 			glNormal3f(0.0, 1.0, 0.0);//Facing straight up -> Top facing
@@ -267,6 +268,7 @@ class Building{
 		float _height;
 		float _size;
 		int _noWindowsPerRow;
+		unsigned int _texture;
 };
 
 class Plane{
@@ -275,19 +277,37 @@ class Plane{
 			//Note that we can generate a texture for each building object but that will require more resources. In fact when tried, it works but the program will be very slow
 			glGenTextures(1, &_texture);
 			glBindTexture(GL_TEXTURE_2D, _texture);
-			_data = stbi_load("textures/container.jpg", &_width, &_height, &_colorChannels, 0);
+			_data = stbi_load("textures/building.jpg", &_width, &_height, &_colorChannels, 0);
         	if (_data){
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, _width, _height, 0, GL_RGB, GL_UNSIGNED_BYTE, _data);
+				stbi_image_free(_data);
        		}else{
 				printf("Building texture failed to load.\n");
+				stbi_image_free(_data);
 				exit(1);
        		}
-			stbi_image_free(_data);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glBindTexture(GL_TEXTURE_2D, 0);//TODO: add more textures
+			glBindTexture(GL_TEXTURE_2D, 0);
+
+			glGenTextures(1, &_texture1);
+			glBindTexture(GL_TEXTURE_2D, _texture1);
+			_data = stbi_load("textures/building2.jpg", &_width, &_height, &_colorChannels, 0);
+        	if (_data){
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, _width, _height, 0, GL_RGB, GL_UNSIGNED_BYTE, _data);
+				stbi_image_free(_data);
+       		}else{
+				printf("Building texture failed to load.\n");
+				stbi_image_free(_data);
+				exit(1);
+       		}
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glBindTexture(GL_TEXTURE_2D, 0);
 
 			//Proceduaral generation reference: https://bitbucket.org/whleucka/cpsc-graphics-final/src/856ef81f67cf92f90c84368965331069d2de4e0f/src/main.cpp?at=master&fileviewer=file-view-default
 			for(int j = -2; j > -_size - 6; j -= 6){
@@ -300,7 +320,13 @@ class Plane{
 						}else{
 							randomHeight = rand() % 7 + 1;//randomHeight = [1, 7] (Make a shorter building)
 						}
-						_building = new Building(i, 0.0f, j, randomSize, randomHeight);
+						int randomTexture = rand() % 2;
+						if(randomTexture == 0){
+							_building = new Building(i, 0.0f, j, randomSize, randomHeight, _texture);
+						}else{
+							_building = new Building(i, 0.0f, j, randomSize, randomHeight, _texture1);
+						}
+						printf("The random texture is %d.\n", randomTexture);
 						_buildings.push_back(_building);
 					}
 				}
@@ -338,7 +364,7 @@ class Plane{
 			glEnd();//Finish drawing
 
 			for(std::vector<Building*>::iterator it = _buildings.begin(); it != _buildings.end(); ++it){//Draw Buildings
-        		(*it)->draw(_texture);//TODO: Pass different textures
+        		(*it)->draw();
 			}
 		}
 
@@ -347,7 +373,8 @@ class Plane{
 		float _block;//Size of the block (a.k.a. the length of the "street")
 		std::vector<Building*> _buildings;
 		Building* _building;//Building to be inserted into XZ's vector
-		unsigned int _texture;//unsigned int texture2;//TODO: add more textures
+		unsigned int _texture;
+		unsigned int _texture1;
 		unsigned char* _data;//Texture data
 		int _width;//Texture's width and height
 		int _height;
@@ -412,7 +439,7 @@ class World{
 				GL_FALSE,//Is the data normalized?
 				3 * sizeof(float),//How much data per row
 				(void*)0);//How much data I need to skip over
-			_faces = {"textures/right.jpg", "textures/left.jpg", "textures/top.jpg", "textures/bottom.jpg", "textures/back.jpg", "textures/front.jpg"};
+			_faces = {"textures/right.tga", "textures/left.tga", "textures/top.tga", "textures/bottom.tga", "textures/back.tga", "textures/front.tga"};
 
     		glGenTextures(1, &_texture);//Create 1 texture that are of type unsigned int, as indicated by the texture type
     		glBindTexture(GL_TEXTURE_CUBE_MAP, _texture);//Bind the texture so that any texture commands called after apply to this texture
@@ -457,7 +484,7 @@ class World{
 		void drawSkybox(){//glUniform1i(uSkybox_B, 0);//Makes sure each uniform sampler associates with the correct texture unit
 			glDepthFunc(GL_LEQUAL);//change depth function so depth test passes when values are equal to depth buffer's content
         	glBindVertexArray(_VAO);//skybox cube
-			//glActiveTexture(GL_TEXTURE0);//Activate the texture unit first before binding. This allows us to use multiple textures. If this is not called, the default will be: GL_TEXTURE0
+			glActiveTexture(GL_TEXTURE0);//Activate the texture unit first before binding. This allows us to use multiple textures. If this is not called, the default will be: GL_TEXTURE0
 			//bind the texture before drawing to the texture unit specified earlier. This also makes it available in the fragment shader as a sampler uniform
         	glBindTexture(GL_TEXTURE_CUBE_MAP, _texture);
         	glDrawArrays(GL_TRIANGLES, 0, 36);
