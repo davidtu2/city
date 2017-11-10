@@ -48,6 +48,10 @@ void main (void){
 
   vec4 color1 = texture2D(building, gl_TexCoord[0].st);
 
-  gl_FragColor = (ambient + color0) * color1;
+  //No textures, just light:
+  //gl_FragColor = ambient + color0;
+  //textures only:
   //gl_FragColor = color1;
+  //Textures and light:
+  gl_FragColor = (ambient + color0) * color1;
 }
